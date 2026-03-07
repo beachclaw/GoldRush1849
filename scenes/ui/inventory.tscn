@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/InventoryPanel.gd" id="1"]
+
+[node name="Inventory" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -300.0
+offset_right = 360.0
+offset_bottom = -16.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = -12.0
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+text = "Inventory  [TAB]"
+theme_override_font_sizes/font_size = 18
+
+[node name="Sep" type="HSeparator" parent="Panel/VBox"]
+
+[node name="GoldRow" type="HBoxContainer" parent="Panel/VBox"]
+
+[node name="Lbl" type="Label" parent="Panel/VBox/GoldRow"]
+text = "⚙  Gold Dust"
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 15
+
+[node name="Val" type="Label" parent="Panel/VBox/GoldRow"]
+text = "0.00g"
+theme_override_font_sizes/font_size = 15
+
+[node name="Sep2" type="HSeparator" parent="Panel/VBox"]
+
+[node name="ToolsLabel" type="Label" parent="Panel/VBox"]
+text = "Tools"
+theme_override_font_sizes/font_size = 15
+modulate = Color(0.8, 0.8, 0.8, 1)
+
+[node name="ToolsBox" type="VBoxContainer" parent="Panel/VBox"]
+theme_override_constants/separation = 6

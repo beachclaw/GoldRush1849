@@ -1,18 +1,5 @@
-# Godot
 .godot/
 *.import
 export_presets.cfg
-
-# Build
-gdextension/build/
-*.so
-*.dylib
-*.dll
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
+*.tmp
+user://

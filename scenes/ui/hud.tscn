@@ -12,8 +12,19 @@ anchor_right = 1.0
 offset_left = -220.0
 offset_top = 16.0
 offset_right = -16.0
-offset_bottom = 48.0
-text = "Gold Dust: 0.00g"
+offset_bottom = 50.0
+text = "⚙  0.00g"
+horizontal_alignment = 2
+
+[node name="ToolLabel" type="Label" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 54.0
+offset_right = -16.0
+offset_bottom = 84.0
+text = "🪣  Gold Pan"
 horizontal_alignment = 2
 
 [node name="PromptLabel" type="Label" parent="."]
@@ -22,10 +33,10 @@ anchor_left = 0.5
 anchor_right = 0.5
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = -150.0
+offset_left = -200.0
 offset_top = -80.0
-offset_right = 150.0
-offset_bottom = -48.0
+offset_right = 200.0
+offset_bottom = -50.0
 text = ""
 horizontal_alignment = 1
 visible = false
@@ -36,9 +47,9 @@ anchor_left = 0.5
 anchor_right = 0.5
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = -150.0
+offset_left = -180.0
 offset_top = -44.0
-offset_right = 150.0
+offset_right = 180.0
 offset_bottom = -16.0
 visible = false
 
@@ -46,10 +57,22 @@ visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
+offset_left = -240.0
 offset_top = 60.0
-offset_right = 200.0
+offset_right = 240.0
 offset_bottom = 96.0
+text = ""
+horizontal_alignment = 1
+visible = false
+
+[node name="NotifyLabel" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 106.0
+offset_right = 280.0
+offset_bottom = 142.0
 text = ""
 horizontal_alignment = 1
 visible = false
