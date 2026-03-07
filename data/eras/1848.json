@@ -1,0 +1,29 @@
+{
+  "id": "1848",
+  "name": "The Discovery",
+  "years": [1848, 1850],
+  "description": "Gold discovered at Sutter's Mill. The rush begins. Wild frontier, no law.",
+  "available_tools": ["pan", "pick", "shovel"],
+  "available_buildings": ["tent", "campfire"],
+  "events": [
+    {
+      "id": "gold_discovered",
+      "year": 1848,
+      "type": "narrative",
+      "title": "Gold in the American River!",
+      "body": "Word spreads like wildfire. California will never be the same.",
+      "trigger": "game_start"
+    }
+  ],
+  "ambient": {
+    "sounds": ["river", "birds", "wind"],
+    "music_theme": "wilderness_morning",
+    "fog": true,
+    "wildlife": true
+  },
+  "economy": {
+    "gold_dust_value": 1.0,
+    "nugget_rarity": 0.05,
+    "store_markup": 1.2
+  }
+}
