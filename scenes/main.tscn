@@ -4,4 +4,4 @@
 
 [node name="Main" type="Node"]
 
-[instance id=1 path="res://scenes/game.tscn" parent="."]
+[node name="Game" parent="." instance=ExtResource("1")]

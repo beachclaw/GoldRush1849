@@ -9,8 +9,11 @@ var can_pan: bool = false
 var pan_zone = null
 
 signal gold_updated(amount: float)
-signal pan_started()
+signal pan_started
 signal pan_finished(found: float)
+
+func _ready() -> void:
+	add_to_group("player")
 
 func _physics_process(delta: float) -> void:
 	# Gravity
@@ -38,20 +41,17 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _start_panning() -> void:
 	is_panning = true
-	emit_signal("pan_started")
+	pan_started.emit()
 	await get_tree().create_timer(2.0).timeout
 	var found = _calculate_yield()
 	gold_dust += found
-	emit_signal("pan_finished", found)
-	emit_signal("gold_updated", gold_dust)
+	pan_finished.emit(found)
+	gold_updated.emit(gold_dust)
 	is_panning = false
 
 func _calculate_yield() -> float:
-	# Base yield with some randomness
-	# Later: factor in location quality, tool upgrades, skill
 	var base = randf_range(0.3, 2.5)
-	var lucky = randf()
-	if lucky > 0.95:
+	if randf() > 0.95:
 		base *= 5.0  # Lucky strike!
 	return base
 
