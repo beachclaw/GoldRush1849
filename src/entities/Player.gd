@@ -20,9 +20,9 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 
-	# Movement
-	var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	# WASD movement (relative to world, not camera)
+	var input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
 
 	if direction:
 		velocity.x = direction.x * SPEED
@@ -36,8 +36,12 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Pan
 	if event.is_action_pressed("ui_accept") and can_pan and not is_panning:
 		_start_panning()
+	# Screenshot (F12)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F12:
+		_save_screenshot()
 
 func _start_panning() -> void:
 	is_panning = true
@@ -62,3 +66,9 @@ func enter_pan_zone(zone) -> void:
 func exit_pan_zone() -> void:
 	can_pan = false
 	pan_zone = null
+
+func _save_screenshot() -> void:
+	var img = get_viewport().get_texture().get_image()
+	var path = "user://screenshot.png"
+	img.save_png(path)
+	print("Screenshot saved to: " + OS.get_user_data_dir() + "/screenshot.png")
