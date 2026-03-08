@@ -19,7 +19,8 @@ const CABIN_GOLD    := 100.0
 @onready var earth_zone:   Area3D = $World/EarthZone
 @onready var store_zone:   Area3D = $World/StoreZone
 
-var _near_store: bool     = false
+var _near_store:   bool   = false
+var _current_zone: String = ""
 var _demo_ended: bool     = false
 var _cabin_built: bool    = false
 
@@ -54,6 +55,10 @@ func _ready() -> void:
 	Tutorial.init(hud)
 	_show_intro_tutorial()
 
+	# Spatial ambient audio — river at x=-18, campfire near camp
+	Audio.start_ambient("river", Vector3(-18.0, 0.5, 0.0),  -8.0, 35.0)
+	Audio.start_ambient("fire",  Vector3(6.5,   0.7, 10.5), -14.0, 18.0)
+
 	# Sync cabin if already built
 	if SaveManager.data.get("camp_level", 0) >= 1:
 		_build_cabin()
@@ -66,6 +71,14 @@ func _show_intro_tutorial() -> void:
 	Tutorial.show_step("store", "💡 Visit the General Store (brown building) to buy better tools", 0.5)
 
 # ─── Input ────────────────────────────────────────────────────────────────────
+
+func _process(delta: float) -> void:
+	# Footsteps — check if player is moving on ground
+	if player and player.is_on_floor():
+		var moving: bool = player.velocity.length() > 0.5
+		Audio.update_footsteps(moving, delta)
+	else:
+		Audio.update_footsteps(false, delta)
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Pause — only when store/inventory/demo not open
@@ -89,6 +102,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_zone_entered(zone) -> void:
 	var tool_id: String = zone.get_tool_id()
+	_current_zone = zone.zone_name.to_lower().replace(" ", "_")
 	hud.set_tool(tool_id)
 	if SaveManager.has_tool(tool_id) or tool_id == "pan":
 		hud.set_prompt("SPACE — %s" % zone.zone_name)
@@ -98,6 +112,7 @@ func _on_zone_entered(zone) -> void:
 		hud.set_prompt("Need %s — buy at store (%dg)" % [tname, int(cost)])
 
 func _on_zone_exited(_zone) -> void:
+	_current_zone = ""
 	hud.set_prompt("")
 	hud.set_tool("pan")
 
@@ -120,6 +135,9 @@ func _on_mining_started(tool_id: String) -> void:
 		Audio.play("ui_click", -12.0)
 		return
 	Audio.play("mining_hit", -8.0)
+	# Pan splash when mining in water zones
+	if _current_zone in ["american_river", "rich_bend", "shallow_ford"]:
+		Audio.play("pan_splash", -10.0)
 	hud.show_mining(tool_id, ToolSystem.get_action_time(tool_id))
 
 func _on_mining_finished(tool_id: String, amount: float, lucky: bool) -> void:
