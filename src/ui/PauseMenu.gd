@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const SETTINGS_SCENE := preload("res://scenes/ui/settings_menu.tscn")
+
 signal resumed
 signal quit_to_menu
 
@@ -27,6 +29,12 @@ func _on_save_pressed() -> void:
 	btn.text = "Saved!"
 	await get_tree().create_timer(1.2).timeout
 	btn.text = "Save Game"
+
+func _on_settings_pressed() -> void:
+	var s := SETTINGS_SCENE.instantiate()
+	# Wire the Back button from inside the settings scene
+	s.get_node("Panel/VBox/BackBtn").pressed.connect(s.queue_free)
+	add_child(s)
 
 func _on_quit_pressed() -> void:
 	SaveManager.save()

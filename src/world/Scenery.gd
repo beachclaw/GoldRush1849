@@ -32,6 +32,8 @@ func _ready() -> void:
 	_spawn_trees(50)
 	_spawn_rocks(30)
 	_spawn_river_banks()
+	_spawn_rich_vein_markers()
+	_spawn_campfire_particles()
 
 func _setup_materials() -> void:
 	mat_trunk         = _mat(Color(0.38, 0.25, 0.12))
@@ -140,7 +142,16 @@ func _spawn_camp() -> void:
 	var mat_coal    := _mat(Color(0.18, 0.14, 0.10))
 	var mat_log     := _mat(Color(0.35, 0.22, 0.10))
 
-	# ── Tent — pyramid shape (radial_segments=4 = 4 triangular faces)
+	# ═══ CAMP LAYOUT ════════════════════════════════════════════════════════
+	# Camp is tucked in the SE corner (10, 0, 12), sheltered by trees
+	# Campfire slightly west of tent creates a natural gathering point
+	# Store sits NW of the spawn point (-6, 0, -3), facing south toward river trail
+	# Natural path: Camp (SE) → Spawn (0,0) → Store (NW) → River (W)
+
+	var TENT_POS  := Vector3(10.0, 0.0, 12.0)
+	var FIRE_POS  := Vector3(6.5,  0.0, 10.5)
+
+	# ── Tent — pyramid shape
 	var tent := MeshInstance3D.new()
 	var tm   := CylinderMesh.new()
 	tm.top_radius      = 0.08
@@ -149,22 +160,61 @@ func _spawn_camp() -> void:
 	tm.radial_segments = 4
 	tm.rings           = 1
 	tent.mesh     = tm
-	tent.position = Vector3(6, 1.3, 5)
+	tent.position = TENT_POS + Vector3(0, 1.3, 0)
 	tent.rotation.y = PI / 4.0
 	add_child(tent)
 	_set_mat(tent, mat_canvas)
 
-	# Tent door — dark opening hint (small flat box)
+	# Tent door — dark opening facing the fire
 	var door := MeshInstance3D.new()
 	var dm   := BoxMesh.new()
 	dm.size       = Vector3(0.9, 1.2, 0.05)
 	door.mesh     = dm
-	door.position = Vector3(6, 0.6, 3.02)
+	door.position = TENT_POS + Vector3(-1.52, 0.6, -1.52)
+	door.rotation.y = PI / 4.0
 	add_child(door)
 	_set_mat(door, _mat(Color(0.28, 0.18, 0.08)))
 
+	# Tent guy-rope stakes (4 small pegs around tent)
+	for angle in [0.0, PI/2.0, PI, 3.0*PI/2.0]:
+		var stake := MeshInstance3D.new()
+		var sm2   := CylinderMesh.new()
+		sm2.top_radius = 0.03; sm2.bottom_radius = 0.04; sm2.height = 0.35
+		stake.mesh     = sm2
+		stake.position = TENT_POS + Vector3(sin(angle) * 2.6, 0.17, cos(angle) * 2.6)
+		add_child(stake)
+		_set_mat(stake, mat_pole)
+
+	# Bedroll visible inside tent (log sitting near entrance)
+	var bedroll := MeshInstance3D.new()
+	var brm     := CylinderMesh.new()
+	brm.top_radius = 0.18; brm.bottom_radius = 0.20; brm.height = 1.1
+	bedroll.mesh     = brm
+	bedroll.position = TENT_POS + Vector3(-0.3, 0.2, 0.3)
+	bedroll.rotation.z = PI / 2.0
+	bedroll.rotation.y = PI / 3.0
+	add_child(bedroll)
+	_set_mat(bedroll, _mat(Color(0.55, 0.40, 0.28)))
+
+	# Tree stump seat near fire
+	var stump := MeshInstance3D.new()
+	var stm   := CylinderMesh.new()
+	stm.top_radius = 0.28; stm.bottom_radius = 0.32; stm.height = 0.45; stm.radial_segments = 8
+	stump.mesh     = stm
+	stump.position = FIRE_POS + Vector3(1.6, 0.22, -0.8)
+	add_child(stump)
+	_set_mat(stump, _mat(Color(0.36, 0.24, 0.14)))
+	# Stump top ring (lighter)
+	var stump_top := MeshInstance3D.new()
+	var stm2      := CylinderMesh.new()
+	stm2.top_radius = 0.27; stm2.bottom_radius = 0.27; stm2.height = 0.03; stm2.radial_segments = 8
+	stump_top.mesh     = stm2
+	stump_top.position = FIRE_POS + Vector3(1.6, 0.46, -0.8)
+	add_child(stump_top)
+	_set_mat(stump_top, _mat(Color(0.58, 0.44, 0.28)))
+
 	# ── Campfire
-	var fire_pos := Vector3(2.5, 0, 7)
+	var fire_pos := FIRE_POS
 
 	# Log circle
 	for i in range(4):
@@ -253,37 +303,74 @@ func _place_cloud(base_pos: Vector3) -> void:
 # ─── Mountains ────────────────────────────────────────────────────────────────
 
 func _spawn_mountains() -> void:
-	var peaks = [
-		{ "pos": Vector3(-55, 0, -62), "w": 24.0, "h": 30.0 },
-		{ "pos": Vector3(-22, 0, -68), "w": 28.0, "h": 38.0 },
-		{ "pos": Vector3( 12, 0, -65), "w": 22.0, "h": 32.0 },
-		{ "pos": Vector3( 44, 0, -60), "w": 20.0, "h": 26.0 },
-		{ "pos": Vector3( 68, 0, -55), "w": 16.0, "h": 22.0 },
-	]
-	for p in peaks:
-		var mt := MeshInstance3D.new()
-		var mesh := CylinderMesh.new()
-		mesh.top_radius      = 0.4
-		mesh.bottom_radius   = p.w / 2.0
-		mesh.height          = p.h
-		mesh.radial_segments = 6
-		mesh.rings           = 1
-		mt.mesh     = mesh
-		mt.position = p.pos + Vector3(0, p.h / 2.0, 0)
-		add_child(mt)
-		_set_mat(mt, mat_mountain)
+	# Sierra Nevada character: asymmetric ridgelines, granite grey, clustered sub-peaks,
+	# foreground hills for depth, snow only on upper ~20%
 
-		var snow := MeshInstance3D.new()
-		var smesh := CylinderMesh.new()
-		smesh.top_radius      = 0.2
-		smesh.bottom_radius   = p.w * 0.18
-		smesh.height          = p.h * 0.28
-		smesh.radial_segments = 6
-		smesh.rings           = 1
-		snow.mesh     = smesh
-		snow.position = p.pos + Vector3(0, p.h * 0.90, 0)
-		add_child(snow)
-		_set_mat(snow, mat_mountain_snow)
+	# Sierra Nevada reference: asymmetric ridges, granite grey-brown, varied heights,
+	# foreground hills for atmospheric depth, clustered tight sub-peaks that merge visually
+
+	# Strategy: pack ALL peaks into a tight band x=-35 to +35, z=-43 to -52.
+	# This puts the range squarely in the player's starting view.
+	# One dominant spike at centre (h=70), flanked by progressively shorter peaks.
+	# Mountains have NO collision — player is blocked by invisible wall at z=-41.
+
+	# FAR BACKDROP — very wide, low silhouette behind main peaks (bluer, taller z)
+	_mountain_peak(-38.0, -56.0, 32.0, 24.0, 8.0, 10, Color(0.33, 0.32, 0.38)) # blue-grey
+	_mountain_peak( -8.0, -58.0, 35.0, 28.0, 9.0, 10, Color(0.31, 0.30, 0.36))
+	_mountain_peak( 22.0, -54.0, 30.0, 22.0, 7.0, 10, Color(0.34, 0.33, 0.39))
+
+	# MAIN RANGE — tightly packed, strong height contrast
+	# Far left shoulder
+	_mountain_peak(-35.0, -46.0, 16.0, 24.0, 3.0, 7, Color(0.40, 0.36, 0.29))
+	_mountain_peak(-28.0, -47.0, 18.0, 38.0, 1.5, 7, Color(0.36, 0.33, 0.27))
+	# Dominant western spike
+	_mountain_peak(-20.0, -48.0, 15.0, 58.0, 0.3, 6, Color(0.30, 0.27, 0.22))
+	_mountain_snow(-20.0, 58.0 * 0.80, -48.0, 5.0, 1.2, 6)
+	# Saddle + central peak
+	_mountain_peak(-13.0, -46.0, 14.0, 32.0, 2.0, 7, Color(0.38, 0.34, 0.27))
+	# DOMINANT CENTRE SPIKE — tallest, draws the eye
+	_mountain_peak( -4.0, -49.0, 14.0, 72.0, 0.2, 6, Color(0.28, 0.25, 0.21))
+	_mountain_snow( -4.0, 72.0 * 0.82, -49.0, 5.5, 1.3, 6)
+	# Right companion ridge
+	_mountain_peak(  5.0, -48.0, 16.0, 50.0, 0.5, 7, Color(0.32, 0.29, 0.24))
+	_mountain_snow(  5.0, 50.0 * 0.84, -48.0, 4.0, 1.0, 7)
+	_mountain_peak( 13.0, -46.0, 15.0, 36.0, 1.5, 7, Color(0.37, 0.34, 0.28))
+	_mountain_peak( 20.0, -45.0, 14.0, 26.0, 2.5, 7, Color(0.40, 0.37, 0.30))
+	# East shoulder — lower, plateau-like
+	_mountain_peak( 27.0, -44.0, 18.0, 20.0, 4.0, 8, Color(0.42, 0.39, 0.32))
+	_mountain_peak( 33.0, -43.0, 16.0, 14.0, 5.0, 8, Color(0.44, 0.41, 0.34))
+
+func _mountain_peak(px: float, pz: float, base_r: float, height: float,
+		tip_r: float, segs: int, col: Color) -> void:
+	var mt    := MeshInstance3D.new()
+	var mesh  := CylinderMesh.new()
+	mesh.top_radius      = tip_r
+	mesh.bottom_radius   = base_r
+	mesh.height          = height
+	mesh.radial_segments = segs
+	mesh.rings           = 2
+	mt.mesh     = mesh
+	mt.position = Vector3(px, height / 2.0, pz)
+	mt.rotation.y = rng.randf_range(0.0, PI)
+	add_child(mt)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = col
+	mt.set_surface_override_material(0, mat)
+
+func _mountain_snow(px: float, py: float, pz: float,
+		bot_r: float, tip_r: float, segs: int) -> void:
+	var snow  := MeshInstance3D.new()
+	var smesh := CylinderMesh.new()
+	smesh.top_radius      = tip_r
+	smesh.bottom_radius   = bot_r
+	smesh.height          = 8.0
+	smesh.radial_segments = segs
+	smesh.rings           = 1
+	snow.mesh     = smesh
+	snow.position = Vector3(px, py, pz)
+	snow.rotation.y = rng.randf_range(0.0, PI)
+	add_child(snow)
+	_set_mat(snow, mat_mountain_snow)
 
 # ─── Trees ────────────────────────────────────────────────────────────────────
 
@@ -379,47 +466,122 @@ func _spawn_river_banks() -> void:
 # ─── Store Building ───────────────────────────────────────────────────────────
 
 func _spawn_store_building() -> void:
-	var mat_wall  := _mat(Color(0.55, 0.40, 0.22))   # weathered wood
-	var mat_roof  := _mat(Color(0.30, 0.18, 0.10))   # dark shingles
-	var mat_sign  := _mat(Color(0.75, 0.62, 0.35))   # sign board
+	# Historically accurate 1849 California gold rush general store:
+	# False front, covered porch with posts, clapboard siding, barrels, crates
 
-	# Main body
-	var body := MeshInstance3D.new()
-	var bm   := BoxMesh.new()
-	bm.size       = Vector3(4.0, 3.0, 3.5)
-	body.mesh     = bm
-	body.position = Vector3(-7, 1.5, 6)
-	add_child(body)
-	_set_mat(body, mat_wall)
+	# ── Materials ──────────────────────────────────────────────────────────
+	var mat_wall    := _mat(Color(0.62, 0.48, 0.30))  # weathered clapboard
+	var mat_dark    := _mat(Color(0.28, 0.18, 0.10))  # dark trim / posts
+	var mat_roof_sh := _mat(Color(0.32, 0.22, 0.12))  # shingles
+	var mat_false   := _mat(Color(0.67, 0.52, 0.33))  # false front (slightly lighter)
+	var mat_sign    := _mat(Color(0.42, 0.12, 0.08))  # dark red sign board
+	var mat_sign_bg := _mat(Color(0.88, 0.78, 0.52))  # cream sign lettering bg
+	var mat_door    := _mat(Color(0.20, 0.13, 0.07))  # dark door
+	var mat_window  := _mat(Color(0.25, 0.32, 0.42))  # blue-grey glass
+	var mat_barrel  := _mat(Color(0.38, 0.24, 0.12))  # barrel wood
+	var mat_crate   := _mat(Color(0.52, 0.40, 0.22))  # crate wood
+	var mat_porch   := _mat(Color(0.50, 0.38, 0.20))  # porch planks
 
-	# Roof
-	var roof := MeshInstance3D.new()
-	var rm   := CylinderMesh.new()
-	rm.top_radius = 0.1; rm.bottom_radius = 3.2; rm.height = 1.6; rm.radial_segments = 4
-	roof.mesh     = rm
-	roof.position = Vector3(-7, 3.8, 6)
-	roof.rotation.y = PI / 4.0
-	add_child(roof)
-	_set_mat(roof, mat_roof)
+	var CX: float = -6.0   # building centre X  (NW of spawn, facing south)
+	var CZ: float = -5.0   # building centre Z
 
-	# Sign board above door
-	var sign := MeshInstance3D.new()
-	var sm   := BoxMesh.new()
-	sm.size       = Vector3(2.2, 0.5, 0.12)
-	sign.mesh     = sm
-	sign.position = Vector3(-7, 2.9, 4.23)
-	add_child(sign)
-	_set_mat(sign, mat_sign)
+	# ── 1. Main building body ──────────────────────────────────────────────
+	_store_box(Vector3(CX, 1.6, CZ), Vector3(6.0, 3.2, 5.0), mat_wall)
 
-	# Porch posts
-	for side in [-1, 1]:
+	# ── 2. False front ─────────────────────────────────────────────────────
+	# Flat panel sitting flush with front face (z = CZ-2.5 = 4.0), extends ~2m above roofline
+	_store_box(Vector3(CX, 2.85, 3.88), Vector3(6.0, 5.7, 0.22), mat_false)
+
+	# Sign board on false front (upper section)
+	_store_box(Vector3(CX, 4.75, 3.76), Vector3(5.2, 0.95, 0.12), mat_sign)
+	# Cream lettering background strip
+	_store_box(Vector3(CX, 4.75, 3.70), Vector3(4.6, 0.55, 0.06), mat_sign_bg)
+
+	# False front cap (top trim)
+	_store_box(Vector3(CX, 5.78, 3.88), Vector3(6.3, 0.22, 0.30), mat_dark)
+
+	# ── 3. Rear roof (hidden behind false front) ───────────────────────────
+	var rear_roof := MeshInstance3D.new()
+	var rrm       := CylinderMesh.new()
+	rrm.top_radius = 0.05; rrm.bottom_radius = 3.5; rrm.height = 1.4; rrm.radial_segments = 4
+	rear_roof.mesh     = rrm
+	rear_roof.position = Vector3(CX, 3.9, CZ + 0.4)
+	rear_roof.rotation.y = PI / 4.0
+	add_child(rear_roof)
+	_set_mat(rear_roof, mat_roof_sh)
+
+	# ── 4. Porch floor (raised platform) ──────────────────────────────────
+	_store_box(Vector3(CX, 0.12, 2.3), Vector3(6.2, 0.24, 2.6), mat_porch)
+
+	# Porch floor planks lines (thin dark strips for plank detail)
+	for i in range(-2, 3):
+		_store_box(Vector3(CX + i * 1.1, 0.25, 2.3), Vector3(0.06, 0.01, 2.6), mat_dark)
+
+	# ── 5. Porch awning ────────────────────────────────────────────────────
+	_store_box(Vector3(CX, 2.82, 2.2), Vector3(6.4, 0.16, 2.8), mat_dark)
+
+	# ── 6. Porch posts (3 posts) ───────────────────────────────────────────
+	for px in [-2.2, 0.0, 2.2]:
 		var post := MeshInstance3D.new()
 		var pm   := CylinderMesh.new()
-		pm.top_radius = 0.08; pm.bottom_radius = 0.10; pm.height = 2.4
+		pm.top_radius = 0.09; pm.bottom_radius = 0.11; pm.height = 2.58
 		post.mesh     = pm
-		post.position = Vector3(-7 + side * 1.5, 1.2, 4.0)
+		post.position = Vector3(CX + px, 1.41, 0.92)
 		add_child(post)
-		_set_mat(post, mat_roof)
+		_set_mat(post, mat_dark)
+
+	# ── 7. Steps (2 steps up to porch) ────────────────────────────────────
+	_store_box(Vector3(CX, 0.05, 0.78), Vector3(2.2, 0.10, 0.38), mat_porch)
+	_store_box(Vector3(CX, 0.14, 1.16), Vector3(2.2, 0.10, 0.38), mat_porch)
+
+	# ── 8. Door frame (dark recess on front face) ──────────────────────────
+	_store_box(Vector3(CX, 1.15, 3.80), Vector3(1.05, 2.30, 0.18), mat_door)
+
+	# ── 9. Windows ─────────────────────────────────────────────────────────
+	# Front window (left of door)
+	_store_box(Vector3(CX - 2.0, 1.85, 3.80), Vector3(0.95, 0.85, 0.12), mat_window)
+	# Side window (left wall)
+	_store_box(Vector3(CX - 3.02, 1.85, CZ - 0.5), Vector3(0.10, 0.75, 0.90), mat_window)
+
+	# ── 10. Barrels on porch (3, near left post) ───────────────────────────
+	var barrel_positions := [
+		Vector3(CX - 2.4, 0.52, 1.6),
+		Vector3(CX - 1.7, 0.52, 1.6),
+		Vector3(CX - 2.0, 1.12, 1.6),  # stacked on top
+	]
+	for bpos in barrel_positions:
+		var bar := MeshInstance3D.new()
+		var bm2 := CylinderMesh.new()
+		bm2.top_radius = 0.22; bm2.bottom_radius = 0.22; bm2.height = 0.50; bm2.radial_segments = 10
+		bar.mesh     = bm2
+		bar.position = bpos
+		add_child(bar)
+		_set_mat(bar, mat_barrel)
+		# Barrel rings
+		var ring := MeshInstance3D.new()
+		var rm2  := CylinderMesh.new()
+		rm2.top_radius = 0.235; rm2.bottom_radius = 0.235; rm2.height = 0.06; rm2.radial_segments = 10
+		ring.mesh     = rm2
+		ring.position = bpos
+		add_child(ring)
+		_set_mat(ring, mat_dark)
+
+	# ── 11. Crates near right post ─────────────────────────────────────────
+	_store_box(Vector3(CX + 2.0, 0.47, 1.5), Vector3(0.50, 0.50, 0.50), mat_crate)
+	_store_box(Vector3(CX + 2.0, 0.97, 1.5), Vector3(0.50, 0.50, 0.50), mat_crate)
+
+	# Crate cross-slat detail
+	_store_box(Vector3(CX + 2.0, 0.47, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
+	_store_box(Vector3(CX + 2.0, 0.97, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
+
+func _store_box(pos: Vector3, size: Vector3, mat: StandardMaterial3D) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size   = size
+	mi.mesh   = bm
+	mi.position = pos
+	add_child(mi)
+	_set_mat(mi, mat)
 
 # ─── Rock Face ────────────────────────────────────────────────────────────────
 
@@ -427,13 +589,13 @@ func _spawn_rock_face() -> void:
 	var mat_rock_face := _mat(Color(0.50, 0.46, 0.40))
 	var mat_rock_dark := _mat(Color(0.36, 0.32, 0.28))
 
-	# Main cliff face — cluster of large boulders near river right side
+	# Rock face cluster near river bank — new position (-14, ?, 8)
 	var positions := [
-		Vector3(-10, 1.2, -8),
-		Vector3(-12, 0.8, -6),
-		Vector3(-9,  0.6, -10),
-		Vector3(-13, 1.4, -9),
-		Vector3(-11, 2.0, -7),
+		Vector3(-13, 1.2,  8.0),
+		Vector3(-15, 0.8,  9.2),
+		Vector3(-12, 0.6,  6.8),
+		Vector3(-16, 1.4,  7.5),
+		Vector3(-14, 2.0,  9.8),
 	]
 	var scales := [
 		Vector3(2.2, 2.4, 1.8),
@@ -453,25 +615,25 @@ func _spawn_rock_face() -> void:
 		add_child(rock)
 		_set_mat(rock, mat_rock_face if i % 2 == 0 else mat_rock_dark)
 
-	# Ore vein hint — dark stripe on main boulder
+	# Ore vein hint — gold streak on main boulder
 	var vein := MeshInstance3D.new()
 	var vm   := BoxMesh.new()
 	vm.size       = Vector3(0.18, 2.2, 0.25)
 	vein.mesh     = vm
-	vein.position = Vector3(-11, 1.8, -6.8)
+	vein.position = Vector3(-14, 1.8, 9.5)
 	vein.rotation.z = 0.15
 	add_child(vein)
-	_set_mat(vein, _mat(Color(0.62, 0.55, 0.20)))  # gold tint
+	_set_mat(vein, _mat(Color(0.62, 0.55, 0.20)))
 
 # ─── Loose Earth ──────────────────────────────────────────────────────────────
 
 func _spawn_loose_earth() -> void:
-	# Dark soil patch between camp and river — shovel zone
+	# Dark soil patch between camp and river — shovel zone at (-8, ?, 6)
 	var patch := MeshInstance3D.new()
 	var mesh  := BoxMesh.new()
 	mesh.size     = Vector3(5.0, 0.03, 4.0)
 	patch.mesh    = mesh
-	patch.position = Vector3(3, 0.015, 2)
+	patch.position = Vector3(-8, 0.015, 6)
 	add_child(patch)
 	_set_mat(patch, _mat(Color(0.38, 0.26, 0.14)))
 
@@ -484,6 +646,87 @@ func _spawn_loose_earth() -> void:
 	mound.scale    = Vector3(2.5, 0.4, 1.8)
 	add_child(mound)
 	_set_mat(mound, _mat(Color(0.42, 0.30, 0.16)))
+
+# ─── Rich Vein Markers ────────────────────────────────────────────────────────
+
+func _spawn_rich_vein_markers() -> void:
+	# Glimmering spots at the two extra pan zones in game.tscn
+	# Zone 2: quality 1.5 at (-18, 0, -12) — north river spot
+	# Zone 3: quality 0.7 at (-18, 0, 15)  — south river spot (shallow)
+	var rich_spots := [
+		{ "pos": Vector3(-18, -0.3, -12), "quality": 1.5 },
+		{ "pos": Vector3(-18, -0.3,  15), "quality": 0.7 },
+	]
+	for spot in rich_spots:
+		var q: float = float(spot.get("quality", 1.0))
+		var shimmer := MeshInstance3D.new()
+		var mesh   := CylinderMesh.new()
+		mesh.top_radius    = 1.8
+		mesh.bottom_radius = 1.8
+		mesh.height        = 0.02
+		mesh.radial_segments = 16
+		shimmer.mesh = mesh
+		shimmer.position = spot.pos
+		var mat := StandardMaterial3D.new()
+		if q >= 1.2:
+			mat.albedo_color               = Color(1.0, 0.85, 0.1, 0.55)
+			mat.emission_enabled           = true
+			mat.emission                   = Color(1.0, 0.75, 0.0)
+			mat.emission_energy_multiplier = 0.8
+		else:
+			mat.albedo_color = Color(0.55, 0.52, 0.40, 0.35)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		shimmer.set_surface_override_material(0, mat)
+		add_child(shimmer)
+
+# ─── Campfire Particles ───────────────────────────────────────────────────────
+
+func _spawn_campfire_particles() -> void:
+	var fire_pos := Vector3(6.5, 0.7, 10.5)
+
+	# Fire particles
+	var fire := CPUParticles3D.new()
+	fire.position             = fire_pos
+	fire.amount               = 20
+	fire.lifetime             = 0.7
+	fire.one_shot             = false
+	fire.explosiveness        = 0.1
+	fire.randomness           = 0.5
+	fire.direction            = Vector3(0, 1, 0)
+	fire.spread               = 15.0
+	fire.gravity              = Vector3(0, -0.5, 0)
+	fire.initial_velocity_min = 0.8
+	fire.initial_velocity_max = 1.8
+	fire.scale_amount_min     = 0.06
+	fire.scale_amount_max     = 0.18
+	fire.color                = Color(1.0, 0.45, 0.05, 0.9)
+	fire.color_ramp           = _fire_gradient()
+	add_child(fire)
+
+	# Spark particles
+	var sparks := CPUParticles3D.new()
+	sparks.position             = fire_pos
+	sparks.amount               = 8
+	sparks.lifetime             = 1.2
+	sparks.one_shot             = false
+	sparks.explosiveness        = 0.0
+	sparks.randomness           = 0.9
+	sparks.direction            = Vector3(0, 1, 0)
+	sparks.spread               = 25.0
+	sparks.gravity              = Vector3(0.2, -0.2, 0)
+	sparks.initial_velocity_min = 1.5
+	sparks.initial_velocity_max = 3.5
+	sparks.scale_amount_min     = 0.03
+	sparks.scale_amount_max     = 0.07
+	sparks.color                = Color(1.0, 0.9, 0.3, 1.0)
+	add_child(sparks)
+
+func _fire_gradient() -> Gradient:
+	var g := Gradient.new()
+	g.set_color(0, Color(1.0, 0.6, 0.1, 0.9))
+	g.add_point(0.6, Color(0.8, 0.2, 0.0, 0.5))
+	g.add_point(1.0, Color(0.3, 0.1, 0.0, 0.0))
+	return g
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

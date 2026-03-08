@@ -137,6 +137,7 @@ func _refresh() -> void:
 			btn.text     = "Buy"
 
 func _on_buy(item: Dictionary, btn: Button, _cost_label: Label) -> void:
+	Audio.play("ui_click")
 	if not SaveManager.spend_gold(float(item.get("cost", 999))):
 		return
 	var iid: String = str(item.get("id", ""))

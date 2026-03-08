@@ -12,10 +12,12 @@ const CABIN_GOLD    := 100.0
 @onready var cam_pivot:   Node3D          = $CameraPivot
 
 # Zones
-@onready var pan_zone:   Area3D = $World/River/PanZone
-@onready var rock_zone:  Area3D = $World/RockZone
-@onready var earth_zone: Area3D = $World/EarthZone
-@onready var store_zone: Area3D = $World/StoreZone
+@onready var pan_zone:     Area3D = $World/River/PanZone
+@onready var rich_zone:    Area3D = $World/River/RichZone
+@onready var shallow_zone: Area3D = $World/River/ShallowZone
+@onready var rock_zone:    Area3D = $World/RockZone
+@onready var earth_zone:   Area3D = $World/EarthZone
+@onready var store_zone:   Area3D = $World/StoreZone
 
 var _near_store: bool     = false
 var _demo_ended: bool     = false
@@ -26,12 +28,9 @@ func _ready() -> void:
 	player.camera_pivot = cam_pivot
 
 	# Wire zones
-	pan_zone.player_entered.connect(_on_zone_entered)
-	pan_zone.player_exited.connect(_on_zone_exited)
-	rock_zone.player_entered.connect(_on_zone_entered)
-	rock_zone.player_exited.connect(_on_zone_exited)
-	earth_zone.player_entered.connect(_on_zone_entered)
-	earth_zone.player_exited.connect(_on_zone_exited)
+	for zone in [pan_zone, rich_zone, shallow_zone, rock_zone, earth_zone]:
+		zone.player_entered.connect(_on_zone_entered)
+		zone.player_exited.connect(_on_zone_exited)
 	store_zone.player_entered.connect(_on_store_entered)
 	store_zone.player_exited.connect(_on_store_exited)
 
@@ -118,7 +117,9 @@ func _on_store_closed() -> void:
 func _on_mining_started(tool_id: String) -> void:
 	if tool_id == "locked":
 		hud.show_message("Buy this tool at the General Store first!")
+		Audio.play("ui_click", -12.0)
 		return
+	Audio.play("mining_hit", -8.0)
 	hud.show_mining(tool_id, ToolSystem.get_action_time(tool_id))
 
 func _on_mining_finished(tool_id: String, amount: float, lucky: bool) -> void:
@@ -126,10 +127,13 @@ func _on_mining_finished(tool_id: String, amount: float, lucky: bool) -> void:
 	_spawn_gold_burst(player.global_position)
 	if lucky:
 		cam_pivot.shake(0.3, 0.4)
+		Audio.play("lucky_fanfare", -3.0)
 		hud.show_message("⭐ Lucky strike! Found %.2fg!" % amount, 4.0)
-	elif amount >= 3.0:
+	elif amount >= 2.5:
+		Audio.play("gold_big", -6.0)
 		hud.show_message("Good find: %.2fg" % amount)
 	else:
+		Audio.play("gold_chime", -8.0)
 		hud.show_message("Found %.2fg" % amount)
 
 # ─── Gold progression ─────────────────────────────────────────────────────────

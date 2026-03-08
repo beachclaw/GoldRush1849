@@ -4,7 +4,7 @@ var yaw: float   = 0.0
 var pitch: float = -0.08
 var target: Node3D = null
 
-const MOUSE_SENSITIVITY = 0.003
+var MOUSE_SENSITIVITY := 0.003
 const PITCH_MIN    = -1.0
 const PITCH_MAX    = 0.4
 const CAM_DISTANCE = 7.0
@@ -18,6 +18,10 @@ var shake_timer: float     = 0.0
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Load saved sensitivity if it exists
+	var cfg := ConfigFile.new()
+	if cfg.load("user://settings.cfg") == OK:
+		MOUSE_SENSITIVITY = cfg.get_value("controls", "mouse_sensitivity", 0.003)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:

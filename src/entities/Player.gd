@@ -34,27 +34,47 @@ func _on_gold_changed(amount: float) -> void:
 func _build_pan_tool() -> void:
 	var tool_root := Node3D.new()
 	tool_root.name = "ToolRoot"
+	# Hold pan flat at hand level, extended forward/outward — not a stick!
+	tool_root.position = Vector3(0.18, -0.05, 0.28)
 	$Body/RightArm.add_child(tool_root)
 
-	# Handle
-	var handle := MeshInstance3D.new()
-	var hm := CylinderMesh.new()
-	hm.top_radius = 0.035; hm.bottom_radius = 0.04; hm.height = 0.55
-	handle.mesh = hm; handle.position = Vector3(0, 0.45, 0)
-	tool_root.add_child(handle)
-	var mat_h := StandardMaterial3D.new()
-	mat_h.albedo_color = Color(0.38, 0.24, 0.10)
-	handle.set_surface_override_material(0, mat_h)
+	var mat_pan   := StandardMaterial3D.new()
+	mat_pan.albedo_color = Color(0.50, 0.44, 0.32)
+	mat_pan.metallic     = 0.25
+	mat_pan.roughness    = 0.65
 
-	# Pan bowl
-	var pan := MeshInstance3D.new()
-	var pm := CylinderMesh.new()
-	pm.top_radius = 0.22; pm.bottom_radius = 0.18; pm.height = 0.06; pm.radial_segments = 10
-	pan.mesh = pm; pan.position = Vector3(0, 0.75, 0)
-	tool_root.add_child(pan)
-	var mat_p := StandardMaterial3D.new()
-	mat_p.albedo_color = Color(0.55, 0.48, 0.36)
-	pan.set_surface_override_material(0, mat_p)
+	var mat_inner := StandardMaterial3D.new()
+	mat_inner.albedo_color = Color(0.28, 0.24, 0.16)
+
+	var mat_wood  := StandardMaterial3D.new()
+	mat_wood.albedo_color = Color(0.38, 0.24, 0.10)
+
+	# Pan rim — wide shallow bowl held horizontally
+	var rim := MeshInstance3D.new()
+	var rm  := CylinderMesh.new()
+	rm.top_radius = 0.20; rm.bottom_radius = 0.23; rm.height = 0.07; rm.radial_segments = 12
+	rim.mesh = rm
+	tool_root.add_child(rim)
+	rim.set_surface_override_material(0, mat_pan)
+
+	# Pan inner floor (slightly recessed, darker)
+	var floor_mi := MeshInstance3D.new()
+	var fm       := CylinderMesh.new()
+	fm.top_radius = 0.13; fm.bottom_radius = 0.15; fm.height = 0.04; fm.radial_segments = 12
+	floor_mi.mesh     = fm
+	floor_mi.position = Vector3(0, 0.015, 0)
+	tool_root.add_child(floor_mi)
+	floor_mi.set_surface_override_material(0, mat_inner)
+
+	# Short side handle — extends to the side, not upward
+	var handle := MeshInstance3D.new()
+	var hm     := CylinderMesh.new()
+	hm.top_radius = 0.022; hm.bottom_radius = 0.028; hm.height = 0.24
+	handle.mesh     = hm
+	handle.position = Vector3(-0.24, -0.01, 0)
+	handle.rotation.z = PI / 2.0   # horizontal
+	tool_root.add_child(handle)
+	handle.set_surface_override_material(0, mat_wood)
 
 # ─── Physics ──────────────────────────────────────────────────────────────────
 
