@@ -59,8 +59,5 @@ move_right={
 
 [rendering]
 
-environment/defaults/default_clear_color=Color(0.15, 0.12, 0.08, 1)
-
-[rendering]
-
 textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.15, 0.12, 0.08, 1)
