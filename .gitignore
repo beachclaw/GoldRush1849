@@ -4,3 +4,4 @@ export_presets.cfg
 *.tmp
 user://
 builds/
+.DS_Store
