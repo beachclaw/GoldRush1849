@@ -74,6 +74,11 @@ func _ready() -> void:
 	Audio.start_ambient("river", Vector3(-18.0, 0.5, 0.0),  -8.0, 35.0)
 	Audio.start_ambient("fire",  Vector3(6.5,   0.7, 10.5), -14.0, 18.0)
 
+	# Forest ambient — one emitter per timber grove
+	Audio.start_ambient("forest_pine",  Vector3(-30, 0.5, 20),  -16.0, 25.0)
+	Audio.start_ambient("forest_oak",   Vector3(25,  0.5, -15), -16.0, 25.0)
+	Audio.start_ambient("forest_cedar", Vector3(-10, 0.5, -35), -16.0, 25.0)
+
 	# Sync cabin if already placed
 	if SaveManager.has_cabin():
 		_build_cabin()

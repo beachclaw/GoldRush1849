@@ -22,6 +22,7 @@ const SOUNDS := {
 const AMBIENT := {
 	"river":   "res://assets/audio/river_flow.wav",
 	"fire":    "res://assets/audio/fire_crackle.wav",
+	"forest":  "res://assets/audio/forest_ambience.wav",
 }
 
 var _players:  Dictionary = {}   # String → AudioStreamPlayer
@@ -59,7 +60,13 @@ func start_ambient(id: String, world_pos: Vector3,
 		max_dist: float   = 30.0) -> void:
 	if _ambients.has(id):
 		return
-	var stream = load(AMBIENT.get(id, ""))
+	# Support unique ids like "forest_pine" by stripping suffix to find base key
+	var base_key := id
+	if not AMBIENT.has(base_key):
+		var idx := id.rfind("_")
+		if idx > 0:
+			base_key = id.substr(0, idx)
+	var stream = load(AMBIENT.get(base_key, ""))
 	if not stream:
 		push_warning("AudioManager: ambient '%s' not found" % id)
 		return
