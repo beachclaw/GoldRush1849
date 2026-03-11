@@ -4,12 +4,14 @@ const SAVE_PATH := "user://save.json"
 
 var data: Dictionary = {
 	"gold_dust":       0.0,
+	"timber":          0,
 	"unlocked_tools":  ["pan"],
 	"camp_level":      0,      # 0 = tent, 1 = cabin
 	"playtime":        0.0,
 }
 
 signal gold_changed(new_amount: float)
+signal timber_changed(new_amount: int)
 signal tool_unlocked(tool_id: String)
 
 func _ready() -> void:
@@ -33,6 +35,24 @@ func spend_gold(amount: float) -> bool:
 
 func get_gold() -> float:
 	return data.gold_dust
+
+# ─── Timber ──────────────────────────────────────────────────────────────────
+
+func add_timber(amount: int = 1) -> void:
+	data.timber = int(data.timber) + amount
+	timber_changed.emit(int(data.timber))
+	save()
+
+func spend_timber(amount: int) -> bool:
+	if int(data.timber) < amount:
+		return false
+	data.timber = int(data.timber) - amount
+	timber_changed.emit(int(data.timber))
+	save()
+	return true
+
+func get_timber() -> int:
+	return int(data.timber)
 
 # ─── Tools ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +113,7 @@ func load_save() -> bool:
 func reset() -> void:
 	data = {
 		"gold_dust":      0.0,
+		"timber":         0,
 		"unlocked_tools": ["pan"],
 		"camp_level":     0,
 		"playtime":       0.0,

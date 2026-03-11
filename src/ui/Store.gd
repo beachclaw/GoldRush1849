@@ -7,7 +7,7 @@ const ITEMS := [
 	{ "id": "pickaxe",   "label": "⛏  Pickaxe",     "desc": "Medium yield. Works rock faces.",        "cost": 20  },
 	{ "id": "better_pan","label": "🪣  Better Pan",  "desc": "Upgraded pan. 1.5× river yield.",        "cost": 30  },
 	{ "id": "sluice_box","label": "🏗  Sluice Box",  "desc": "High yield river tool.",                 "cost": 50  },
-	{ "id": "cabin_kit", "label": "🏠  Cabin Kit",   "desc": "Upgrade tent to cabin.",                 "cost": 100 },
+	{ "id": "cabin_kit", "label": "🏠  Cabin Kit",   "desc": "Upgrade tent to cabin. Requires 5 timber.", "cost": 100, "timber_cost": 5 },
 ]
 
 var _panel: Panel
@@ -94,10 +94,13 @@ func _build_item_row(item: Dictionary) -> HBoxContainer:
 	row.add_child(info)
 
 	var cost_label := Label.new()
-	cost_label.text = "%dg" % item.cost
+	var cost_text := "%dg" % item.cost
+	if int(item.get("timber_cost", 0)) > 0:
+		cost_text += " +%dt" % int(item.get("timber_cost", 0))
+	cost_label.text = cost_text
 	cost_label.add_theme_font_size_override("font_size", 17)
 	cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	cost_label.custom_minimum_size = Vector2(55, 0)
+	cost_label.custom_minimum_size = Vector2(80, 0)
 	cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	row.add_child(cost_label)
 
@@ -120,7 +123,7 @@ func close() -> void:
 	closed.emit()
 
 func _refresh() -> void:
-	_gold_label.text = "Gold: %.2fg" % SaveManager.get_gold()
+	_gold_label.text = "Gold: %.2fg  |  Timber: %d" % [SaveManager.get_gold(), SaveManager.get_timber()]
 	for entry in _rows:
 		var item: Dictionary = entry.item
 		var row: HBoxContainer = entry.row
@@ -132,14 +135,22 @@ func _refresh() -> void:
 		elif SaveManager.get_gold() < item.cost:
 			btn.disabled = true
 			btn.text     = "Buy"
+		elif int(item.get("timber_cost", 0)) > 0 and SaveManager.get_timber() < int(item.get("timber_cost", 0)):
+			btn.disabled = true
+			btn.text     = "Buy"
 		else:
 			btn.disabled = false
 			btn.text     = "Buy"
 
 func _on_buy(item: Dictionary, btn: Button, _cost_label: Label) -> void:
 	Audio.play("ui_click")
+	var timber_cost: int = int(item.get("timber_cost", 0))
+	if timber_cost > 0 and SaveManager.get_timber() < timber_cost:
+		return
 	if not SaveManager.spend_gold(float(item.get("cost", 999))):
 		return
+	if timber_cost > 0:
+		SaveManager.spend_timber(timber_cost)
 	var iid: String = str(item.get("id", ""))
 	if iid == "better_pan":
 		SaveManager.unlock_tool("pan_upgraded")

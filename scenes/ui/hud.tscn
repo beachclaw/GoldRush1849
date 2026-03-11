@@ -16,7 +16,7 @@ offset_bottom = 50.0
 text = "⚙  0.00g"
 horizontal_alignment = 2
 
-[node name="ToolLabel" type="Label" parent="."]
+[node name="TimberLabel" type="Label" parent="."]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -24,6 +24,17 @@ offset_left = -220.0
 offset_top = 54.0
 offset_right = -16.0
 offset_bottom = 84.0
+text = "🪵  0 timber"
+horizontal_alignment = 2
+
+[node name="ToolLabel" type="Label" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 88.0
+offset_right = -16.0
+offset_bottom = 118.0
 text = "🪣  Gold Pan"
 horizontal_alignment = 2
 

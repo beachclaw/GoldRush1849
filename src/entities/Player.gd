@@ -5,7 +5,10 @@ const GRAVITY = 9.8
 
 var current_tool: String  = "pan"
 var current_zone          = null   # MiningZone or null
+var current_timber_zone   = null   # TimberZone or null
 var is_mining: bool       = false
+var is_chopping: bool     = false
+var chop_count: int       = 0      # hits so far (3 = 1 timber)
 var camera_pivot: Node3D  = null
 
 var walk_cycle: float = 0.0
@@ -13,6 +16,9 @@ var pan_blend: float  = 0.0
 
 signal mining_started(tool_id: String)
 signal mining_finished(tool_id: String, amount: float, lucky: bool)
+signal chopping_started()
+signal chopping_hit(hits_done: int)
+signal chopping_finished()
 
 @onready var body: Node3D              = $Body
 @onready var left_arm: MeshInstance3D  = $Body/LeftArm
@@ -82,7 +88,7 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 
-	if not is_mining:
+	if not is_mining and not is_chopping:
 		var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 		var cam_yaw: float     = camera_pivot.yaw if camera_pivot else 0.0
 		var direction: Vector3 = (Basis(Vector3.UP, cam_yaw) * Vector3(input_dir.x, 0, input_dir.y)).normalized()
@@ -105,7 +111,9 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept"):
-		if current_zone != null and not is_mining:
+		if current_timber_zone != null and not is_chopping and not is_mining:
+			_start_chopping()
+		elif current_zone != null and not is_mining and not is_chopping:
 			_start_mining()
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F12:
 		_save_screenshot()
@@ -147,11 +155,43 @@ func exit_mining_zone() -> void:
 	current_zone = null
 	current_tool = "pan"  # default back to pan
 
+# ─── Timber zone entry / exit ────────────────────────────────────────────────
+
+func enter_timber_zone(zone) -> void:
+	current_timber_zone = zone
+
+func exit_timber_zone() -> void:
+	current_timber_zone = null
+	chop_count = 0
+
+# ─── Chopping ────────────────────────────────────────────────────────────────
+
+const CHOPS_PER_LOG := 3
+const CHOP_TIME     := 1.0   # seconds per swing
+
+func _start_chopping() -> void:
+	if not SaveManager.has_tool("pickaxe"):
+		mining_started.emit("locked")
+		return
+
+	is_chopping = true
+	chop_count = 0
+	chopping_started.emit()
+
+	for i in range(CHOPS_PER_LOG):
+		await get_tree().create_timer(CHOP_TIME).timeout
+		chop_count += 1
+		chopping_hit.emit(chop_count)
+
+	SaveManager.add_timber(1)
+	chopping_finished.emit()
+	is_chopping = false
+
 # ─── Animation ────────────────────────────────────────────────────────────────
 
 func _animate_body(delta: float) -> void:
 	var speed_xz := Vector2(velocity.x, velocity.z).length()
-	pan_blend = lerp(pan_blend, 1.0 if is_mining else 0.0, delta * 6.0)
+	pan_blend = lerp(pan_blend, 1.0 if (is_mining or is_chopping) else 0.0, delta * 6.0)
 
 	if pan_blend > 0.01:
 		body.rotation.x      = lerp(body.rotation.x,      pan_blend * 0.45,  delta * 8.0)

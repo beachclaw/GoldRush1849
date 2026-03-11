@@ -14,6 +14,8 @@ const SOUNDS := {
 	"mining_hit":    "res://assets/audio/mining_hit.wav",
 	"pan_splash":    "res://assets/audio/pan_splash.wav",
 	"footstep":      "res://assets/audio/footstep.wav",
+	"wood_chop":     "res://assets/audio/wood_chop.wav",
+	"wood_collect":  "res://assets/audio/wood_collect.wav",
 }
 
 # ── Ambient loops ─────────────────────────────────────────────────────────────

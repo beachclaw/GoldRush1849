@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 @onready var gold_label:    Label       = $GoldLabel
+@onready var timber_label:  Label       = $TimberLabel
 @onready var tool_label:    Label       = $ToolLabel
 @onready var prompt_label:  Label       = $PromptLabel
 @onready var pan_bar:       ProgressBar = $PanBar
@@ -14,11 +15,16 @@ func _ready() -> void:
 	set_prompt("")
 	# Hook into SaveManager
 	SaveManager.gold_changed.connect(_on_gold_changed)
+	SaveManager.timber_changed.connect(_on_timber_changed)
 	SaveManager.tool_unlocked.connect(_on_tool_unlocked)
 	_on_gold_changed(SaveManager.get_gold())
+	_on_timber_changed(SaveManager.get_timber())
 
 func _on_gold_changed(amount: float) -> void:
 	gold_label.text = "⚙  %.2fg" % amount
+
+func _on_timber_changed(amount: int) -> void:
+	timber_label.text = "🪵  %d timber" % amount
 
 func _on_tool_unlocked(tool_id: String) -> void:
 	if tool_id.ends_with("_available"):

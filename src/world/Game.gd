@@ -28,12 +28,18 @@ func _ready() -> void:
 	cam_pivot.target    = player
 	player.camera_pivot = cam_pivot
 
-	# Wire zones
+	# Wire mining zones
 	for zone in [pan_zone, rich_zone, shallow_zone, rock_zone, earth_zone]:
 		zone.player_entered.connect(_on_zone_entered)
 		zone.player_exited.connect(_on_zone_exited)
 	store_zone.player_entered.connect(_on_store_entered)
 	store_zone.player_exited.connect(_on_store_exited)
+
+	# Wire timber zones (spawned procedurally by Scenery)
+	var scenery: Node3D = $World/Scenery
+	for tzone in scenery.timber_zones:
+		tzone.player_entered.connect(_on_timber_zone_entered)
+		tzone.player_exited.connect(_on_timber_zone_exited)
 
 	# Wire UI
 	store_ui.closed.connect(_on_store_closed)
@@ -46,6 +52,9 @@ func _ready() -> void:
 	# Wire player signals
 	player.mining_started.connect(_on_mining_started)
 	player.mining_finished.connect(_on_mining_finished)
+	player.chopping_started.connect(_on_chopping_started)
+	player.chopping_hit.connect(_on_chopping_hit)
+	player.chopping_finished.connect(_on_chopping_finished)
 
 	# Wire save progression
 	SaveManager.gold_changed.connect(_on_gold_changed)
@@ -127,6 +136,17 @@ func _on_store_exited() -> void:
 func _on_store_closed() -> void:
 	pass
 
+# ─── Timber zone signals ─────────────────────────────────────────────────────
+
+func _on_timber_zone_entered(zone) -> void:
+	if SaveManager.has_tool("pickaxe"):
+		hud.set_prompt("SPACE — Chop trees (%s)" % zone.zone_name)
+	else:
+		hud.set_prompt("Need Pickaxe — buy at store (20g)")
+
+func _on_timber_zone_exited(_zone) -> void:
+	hud.set_prompt("")
+
 # ─── Mining signals ───────────────────────────────────────────────────────────
 
 func _on_mining_started(tool_id: String) -> void:
@@ -153,6 +173,21 @@ func _on_mining_finished(tool_id: String, amount: float, lucky: bool) -> void:
 	else:
 		Audio.play("gold_chime", -8.0)
 		hud.show_message("Found %.2fg" % amount)
+
+# ─── Chopping signals ─────────────────────────────────────────────────────────
+
+func _on_chopping_started() -> void:
+	Audio.play("wood_chop", -6.0)
+	hud.show_mining("pickaxe", player.CHOP_TIME * player.CHOPS_PER_LOG)
+
+func _on_chopping_hit(hits_done: int) -> void:
+	Audio.play("wood_chop", -8.0)
+	hud.show_message("Chop %d/%d" % [hits_done, player.CHOPS_PER_LOG], 1.0)
+
+func _on_chopping_finished() -> void:
+	hud.hide_mining()
+	Audio.play("wood_collect", -4.0)
+	hud.show_message("Timber +1 log!", 3.0)
 
 # ─── Gold progression ─────────────────────────────────────────────────────────
 

@@ -30,6 +30,7 @@ func _ready() -> void:
 	_spawn_loose_earth()
 	_spawn_mountains()
 	_spawn_trees(50)
+	_spawn_timber_groves()
 	_spawn_rocks(30)
 	_spawn_river_banks()
 	_spawn_rich_vein_markers()
@@ -419,6 +420,47 @@ func _place_tree(pos: Vector3) -> void:
 		)
 		root.add_child(canopy)
 		_set_mat(canopy, leaf_mat)
+
+# ─── Timber Groves ────────────────────────────────────────────────────────────
+
+var timber_zones: Array = []   # populated for Game.gd to wire signals
+
+func _spawn_timber_groves() -> void:
+	# 3 harvestable grove clusters placed in safe areas (away from river/origin)
+	var grove_positions := [
+		Vector3(18.0, 0.0, -18.0),   # NE grove
+		Vector3(25.0, 0.0, 12.0),    # SE grove
+		Vector3(-8.0, 0.0, -22.0),   # NW grove
+	]
+	var grove_names := ["Pine Grove", "Oak Stand", "Cedar Thicket"]
+
+	for i in range(grove_positions.size()):
+		var center: Vector3 = grove_positions[i]
+		# Spawn a tight cluster of 5 trees
+		for j in range(5):
+			var offset := Vector3(
+				rng.randf_range(-3.0, 3.0),
+				0.0,
+				rng.randf_range(-3.0, 3.0)
+			)
+			_place_tree(center + offset)
+
+		# Place a TimberZone Area3D over the cluster
+		var zone := Area3D.new()
+		zone.name = "TimberZone_%d" % i
+		var script := load("res://src/world/TimberZone.gd")
+		zone.set_script(script)
+		zone.zone_name = grove_names[i]
+		zone.position = center
+
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(8.0, 4.0, 8.0)
+		shape.shape = box
+		zone.add_child(shape)
+
+		add_child(zone)
+		timber_zones.append(zone)
 
 # ─── Rocks ────────────────────────────────────────────────────────────────────
 
