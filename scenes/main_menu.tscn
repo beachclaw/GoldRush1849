@@ -30,7 +30,7 @@ offset_bottom = 180.0
 theme_override_constants/separation = 24
 
 [node name="Title" type="Label" parent="Center"]
-text = "GOLD MINE"
+text = "GOLD RUSH 1849"
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 52
 
