@@ -41,6 +41,11 @@ func _ready() -> void:
 		tzone.player_entered.connect(_on_timber_zone_entered)
 		tzone.player_exited.connect(_on_timber_zone_exited)
 
+	# Wire cabin zones (spawned procedurally by Scenery)
+	for czone in scenery.cabin_zones:
+		czone.player_entered.connect(_on_cabin_zone_entered)
+		czone.player_exited.connect(_on_cabin_zone_exited)
+
 	# Wire UI
 	store_ui.closed.connect(_on_store_closed)
 	pause_menu.get_node("Panel/VBox/ResumeBtn").pressed.connect(pause_menu._on_resume_pressed)
@@ -55,6 +60,7 @@ func _ready() -> void:
 	player.chopping_started.connect(_on_chopping_started)
 	player.chopping_hit.connect(_on_chopping_hit)
 	player.chopping_finished.connect(_on_chopping_finished)
+	player.cabin_placed.connect(_on_cabin_placed)
 
 	# Wire save progression
 	SaveManager.gold_changed.connect(_on_gold_changed)
@@ -68,9 +74,10 @@ func _ready() -> void:
 	Audio.start_ambient("river", Vector3(-18.0, 0.5, 0.0),  -8.0, 35.0)
 	Audio.start_ambient("fire",  Vector3(6.5,   0.7, 10.5), -14.0, 18.0)
 
-	# Sync cabin if already built
-	if SaveManager.data.get("camp_level", 0) >= 1:
+	# Sync cabin if already placed
+	if SaveManager.has_cabin():
 		_build_cabin()
+		_hide_cabin_zone_markers()
 
 func _show_intro_tutorial() -> void:
 	Tutorial.show_step("move",  "💡 Use WASD to move, mouse to look around", 1.5)
@@ -147,6 +154,71 @@ func _on_timber_zone_entered(zone) -> void:
 func _on_timber_zone_exited(_zone) -> void:
 	hud.set_prompt("")
 
+# ─── Cabin zone signals ─────────────────────────────────────────────────────
+
+func _on_cabin_zone_entered(zone) -> void:
+	if SaveManager.has_cabin():
+		return
+	if SaveManager.has_cabin_kit():
+		hud.set_prompt("SPACE — Place Cabin (%s)" % zone.zone_name)
+	else:
+		hud.set_prompt("Buy a Cabin Kit at the store first")
+
+func _on_cabin_zone_exited(_zone) -> void:
+	hud.set_prompt("")
+
+func _on_cabin_placed(zone) -> void:
+	if _cabin_built:
+		return
+	SaveManager.place_cabin()
+	_build_cabin_at_zone(zone)
+	Audio.play("wood_collect", -4.0)
+	hud.show_message("Cabin placed!", 5.0)
+
+func _build_cabin_at_zone(zone) -> void:
+	_cabin_built = true
+	# Remove the yellow marker
+	if zone.marker:
+		zone.marker.queue_free()
+		zone.marker = null
+
+	# Spawn a brown cabin box at the zone position
+	var mat_wood := StandardMaterial3D.new()
+	mat_wood.albedo_color = Color(0.42, 0.28, 0.14)
+	var mat_roof := StandardMaterial3D.new()
+	mat_roof.albedo_color = Color(0.25, 0.14, 0.08)
+
+	var cabin := MeshInstance3D.new()
+	var cm := BoxMesh.new()
+	cm.size = Vector3(3.8, 2.8, 3.5)
+	cabin.mesh = cm
+	cabin.position = zone.global_position + Vector3(0, 1.4, 0)
+	cabin.set_surface_override_material(0, mat_wood)
+	add_child(cabin)
+
+	var roof := MeshInstance3D.new()
+	var rm := CylinderMesh.new()
+	rm.top_radius = 0.05; rm.bottom_radius = 2.8; rm.height = 1.4; rm.radial_segments = 4
+	roof.mesh = rm
+	roof.position = zone.global_position + Vector3(0, 3.5, 0)
+	roof.rotation.y = PI / 4.0
+	roof.set_surface_override_material(0, mat_roof)
+	add_child(roof)
+
+	# Disable all cabin zone collisions
+	_hide_cabin_zone_markers()
+
+	# Disable the zone so it doesn't fire again
+	zone.set_deferred("monitoring", false)
+
+func _hide_cabin_zone_markers() -> void:
+	var scenery: Node3D = $World/Scenery
+	for czone in scenery.cabin_zones:
+		if czone.marker:
+			czone.marker.queue_free()
+			czone.marker = null
+		czone.set_deferred("monitoring", false)
+
 # ─── Mining signals ───────────────────────────────────────────────────────────
 
 func _on_mining_started(tool_id: String) -> void:
@@ -203,42 +275,34 @@ func _on_gold_changed(amount: float) -> void:
 		demo_end.show_end(amount)
 
 func _on_tool_event(tool_id: String) -> void:
-	# Cabin bought through store triggers camp upgrade
-	if tool_id == "cabin_kit":
-		_build_cabin()
-		SaveManager.set_camp_level(1)
+	pass
 
 # ─── Cabin upgrade ────────────────────────────────────────────────────────────
 
 func _build_cabin() -> void:
+	# Used when loading a save with cabin already placed — spawn at default position
 	_cabin_built = true
-	# Find and remove tent via Scenery (replace with cabin mesh)
-	# For now: just spawn a simple cabin at the tent position
 	var mat_wood := StandardMaterial3D.new()
 	mat_wood.albedo_color = Color(0.42, 0.28, 0.14)
 	var mat_roof := StandardMaterial3D.new()
 	mat_roof.albedo_color = Color(0.25, 0.14, 0.08)
 
-	# Main cabin body
 	var cabin := MeshInstance3D.new()
 	var cm := BoxMesh.new()
 	cm.size = Vector3(3.8, 2.8, 3.5)
 	cabin.mesh = cm
-	cabin.position = Vector3(6, 1.4, 5)
+	cabin.position = Vector3(10, 1.4, 5)
 	cabin.set_surface_override_material(0, mat_wood)
 	add_child(cabin)
 
-	# Cabin roof
 	var roof := MeshInstance3D.new()
 	var rm := CylinderMesh.new()
 	rm.top_radius = 0.05; rm.bottom_radius = 2.8; rm.height = 1.4; rm.radial_segments = 4
 	roof.mesh = rm
-	roof.position = Vector3(6, 3.5, 5)
+	roof.position = Vector3(10, 3.5, 5)
 	roof.rotation.y = PI / 4.0
 	roof.set_surface_override_material(0, mat_roof)
 	add_child(roof)
-
-	hud.show_message("🏠 Cabin built! You're putting down roots.", 5.0)
 
 # ─── Gold particles ───────────────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ const GRAVITY = 9.8
 var current_tool: String  = "pan"
 var current_zone          = null   # MiningZone or null
 var current_timber_zone   = null   # TimberZone or null
+var current_cabin_zone    = null   # CabinZone or null
 var is_mining: bool       = false
 var is_chopping: bool     = false
 var chop_count: int       = 0      # hits so far (3 = 1 timber)
@@ -19,6 +20,7 @@ signal mining_finished(tool_id: String, amount: float, lucky: bool)
 signal chopping_started()
 signal chopping_hit(hits_done: int)
 signal chopping_finished()
+signal cabin_placed(zone)
 
 @onready var body: Node3D              = $Body
 @onready var left_arm: MeshInstance3D  = $Body/LeftArm
@@ -111,7 +113,10 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept"):
-		if current_timber_zone != null and not is_chopping and not is_mining:
+		if current_cabin_zone != null and not is_mining and not is_chopping:
+			if SaveManager.has_cabin_kit():
+				cabin_placed.emit(current_cabin_zone)
+		elif current_timber_zone != null and not is_chopping and not is_mining:
 			_start_chopping()
 		elif current_zone != null and not is_mining and not is_chopping:
 			_start_mining()
@@ -163,6 +168,14 @@ func enter_timber_zone(zone) -> void:
 func exit_timber_zone() -> void:
 	current_timber_zone = null
 	chop_count = 0
+
+# ─── Cabin zone entry / exit ────────────────────────────────────────────────
+
+func enter_cabin_zone(zone) -> void:
+	current_cabin_zone = zone
+
+func exit_cabin_zone() -> void:
+	current_cabin_zone = null
 
 # ─── Chopping ────────────────────────────────────────────────────────────────
 

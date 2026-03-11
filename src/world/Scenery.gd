@@ -35,6 +35,7 @@ func _ready() -> void:
 	_spawn_river_banks()
 	_spawn_rich_vein_markers()
 	_spawn_campfire_particles()
+	_spawn_cabin_zones()
 
 func _setup_materials() -> void:
 	mat_trunk         = _mat(Color(0.38, 0.25, 0.12))
@@ -424,6 +425,7 @@ func _place_tree(pos: Vector3) -> void:
 # ─── Timber Groves ────────────────────────────────────────────────────────────
 
 var timber_zones: Array = []   # populated for Game.gd to wire signals
+var cabin_zones: Array = []    # populated for Game.gd to wire signals
 
 func _spawn_timber_groves() -> void:
 	# 3 harvestable grove clusters placed in safe areas (away from river/origin)
@@ -769,6 +771,51 @@ func _fire_gradient() -> Gradient:
 	g.add_point(0.6, Color(0.8, 0.2, 0.0, 0.5))
 	g.add_point(1.0, Color(0.3, 0.1, 0.0, 0.0))
 	return g
+
+# ─── Cabin Zones ─────────────────────────────────────────────────────────────
+
+func _spawn_cabin_zones() -> void:
+	var positions := [
+		Vector3(10.0, 0.0, 5.0),
+		Vector3(-5.0, 0.0, 15.0),
+	]
+	var names := ["Hilltop Clearing", "Riverside Flat"]
+
+	var mat_marker := StandardMaterial3D.new()
+	mat_marker.albedo_color = Color(0.95, 0.85, 0.2, 0.6)
+	mat_marker.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+	for i in range(positions.size()):
+		var center: Vector3 = positions[i]
+
+		var zone := Area3D.new()
+		zone.name = "CabinZone_%d" % i
+		var script := load("res://src/world/CabinZone.gd")
+		zone.set_script(script)
+		zone.zone_name = names[i]
+		zone.position = center
+
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(6.0, 4.0, 6.0)
+		shape.shape = box
+		zone.add_child(shape)
+
+		# Yellow cylinder marker
+		var marker := MeshInstance3D.new()
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 2.0
+		mesh.bottom_radius = 2.0
+		mesh.height = 0.05
+		mesh.radial_segments = 16
+		marker.mesh = mesh
+		marker.position = Vector3(0, 0.03, 0)
+		marker.set_surface_override_material(0, mat_marker)
+		zone.add_child(marker)
+		zone.marker = marker
+
+		add_child(zone)
+		cabin_zones.append(zone)
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

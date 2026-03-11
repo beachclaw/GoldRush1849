@@ -128,7 +128,8 @@ func _refresh() -> void:
 		var item: Dictionary = entry.item
 		var row: HBoxContainer = entry.row
 		var btn: Button = row.get_child(row.get_child_count() - 1)
-		var owned: bool = SaveManager.has_tool(str(item.get("id", ""))) or (str(item.get("id","")) == "better_pan" and SaveManager.has_tool("pan_upgraded"))
+		var iid: String = str(item.get("id", ""))
+		var owned: bool = SaveManager.has_tool(iid) or (iid == "better_pan" and SaveManager.has_tool("pan_upgraded")) or (iid == "cabin_kit" and (SaveManager.has_cabin_kit() or SaveManager.has_cabin()))
 		if owned:
 			btn.text     = "Owned"
 			btn.disabled = true
@@ -152,7 +153,9 @@ func _on_buy(item: Dictionary, btn: Button, _cost_label: Label) -> void:
 	if timber_cost > 0:
 		SaveManager.spend_timber(timber_cost)
 	var iid: String = str(item.get("id", ""))
-	if iid == "better_pan":
+	if iid == "cabin_kit":
+		SaveManager.give_cabin_kit()
+	elif iid == "better_pan":
 		SaveManager.unlock_tool("pan_upgraded")
 	else:
 		SaveManager.unlock_tool(iid)

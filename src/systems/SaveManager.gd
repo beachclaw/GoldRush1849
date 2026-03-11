@@ -8,11 +8,15 @@ var data: Dictionary = {
 	"unlocked_tools":  ["pan"],
 	"camp_level":      0,      # 0 = tent, 1 = cabin
 	"playtime":        0.0,
+	"cabin_kit":       false,
+	"cabin_placed":    false,
 }
 
 signal gold_changed(new_amount: float)
 signal timber_changed(new_amount: int)
 signal tool_unlocked(tool_id: String)
+signal cabin_kit_changed(has_kit: bool)
+signal cabin_placed_changed(placed: bool)
 
 func _ready() -> void:
 	load_save()
@@ -82,6 +86,27 @@ func _check_unlocks() -> void:
 			# Just signal availability — player still needs to buy from store
 			tool_unlocked.emit(tool_id + "_available")
 
+# ─── Cabin Kit ───────────────────────────────────────────────────────────────
+
+func give_cabin_kit() -> void:
+	data.cabin_kit = true
+	cabin_kit_changed.emit(true)
+	save()
+
+func has_cabin_kit() -> bool:
+	return bool(data.get("cabin_kit", false))
+
+func place_cabin() -> void:
+	data.cabin_kit = false
+	data.cabin_placed = true
+	data.camp_level = 1
+	cabin_kit_changed.emit(false)
+	cabin_placed_changed.emit(true)
+	save()
+
+func has_cabin() -> bool:
+	return bool(data.get("cabin_placed", false))
+
 # ─── Camp ─────────────────────────────────────────────────────────────────────
 
 func set_camp_level(level: int) -> void:
@@ -117,5 +142,7 @@ func reset() -> void:
 		"unlocked_tools": ["pan"],
 		"camp_level":     0,
 		"playtime":       0.0,
+		"cabin_kit":      false,
+		"cabin_placed":   false,
 	}
 	save()
