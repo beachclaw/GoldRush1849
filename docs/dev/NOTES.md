@@ -73,7 +73,7 @@
 - Game.gd wires all zones, store open/close, mining signals to HUD
 
 ### 2026-03-07 — Full Loop Build-Out
-- Main menu (GOLD MINE title, California 1848, Start/Quit)
+- Main menu (GOLD RUSH 1849 title, California 1848, Start/Quit)
 - Pause menu (ESC → Resume / Save / Quit to Menu)
 - Inventory panel (TAB → gold + tools owned/cost)
 - Demo end screen (⭐ The Claim is Yours! at 500g)

@@ -1,4 +1,4 @@
-# Art Direction — Gold Mine
+# Art Direction — GoldRush1849
 
 ## Visual Style
 Low-poly 3D. Clean geometry, expressive color, no photorealism.

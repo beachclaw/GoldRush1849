@@ -1,4 +1,4 @@
-# Core Loop Design — Gold Mine
+# Core Loop Design — GoldRush1849
 
 ## Primary Loop
 ```

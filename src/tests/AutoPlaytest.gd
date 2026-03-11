@@ -13,7 +13,7 @@ var _fails  := 0
 
 func _ready() -> void:
 	print("\n═══════════════════════════════════")
-	print("  GOLD MINE — Automated Playtest")
+	print("  GOLD RUSH 1849 — Automated Playtest")
 	print("═══════════════════════════════════\n")
 	await get_tree().process_frame
 	_run_all_tests()

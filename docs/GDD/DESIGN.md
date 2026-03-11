@@ -1,4 +1,4 @@
-# Gold Mine — Game Design Document
+# GoldRush1849 — Game Design Document
 
 **Engine:** Godot 4  
 **Visual Style:** Low-poly 3D  
@@ -10,7 +10,7 @@
 
 ## Vision Statement
 
-Gold Mine is a game about transformation — of land, of fortune, and of an era.  
+GoldRush1849 is a game about transformation — of land, of fortune, and of an era.  
 You begin as a lone prospector with a pan and a dream on the banks of the American River.  
 Through persistence, luck, and cunning, you build something that changes the landscape forever.  
 The game captures the wildness of 1849 California and the relentless march of progress.

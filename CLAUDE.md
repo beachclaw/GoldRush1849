@@ -22,7 +22,7 @@ Tests cover SaveManager, ToolSystem, MiningZone, gold progression, store buying,
 ### Export builds
 ```
 godot --path . --headless --export-release "Web" builds/web/index.html
-godot --path . --headless --export-release "macOS" builds/mac/GoldMine.dmg
+godot --path . --headless --export-release "macOS" builds/mac/GoldRush1849.dmg
 ```
 
 ## Architecture

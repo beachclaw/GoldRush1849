@@ -1,4 +1,4 @@
-# Gold Mine — v1.0 Demo Launch Plan
+# GoldRush1849 — v1.0 Demo Launch Plan
 
 **Target:** A playable web demo on itch.io
 **Scope:** Solo miner → first upgrade → cabin → 20-30 min core loop

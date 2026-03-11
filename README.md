@@ -1,4 +1,4 @@
-# Gold Mine 🏅
+# GoldRush1849 🏅
 
 A low-poly 3D gold mining game set in California 1849.
 Start as a lone prospector. Build an empire.
