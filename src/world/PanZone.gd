@@ -9,16 +9,19 @@ extends Area3D
 signal player_entered(zone)
 signal player_exited(zone)
 
+func get_tool_id() -> String:
+	return "pan"
+
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
 func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player"):
-		body.enter_pan_zone(self)
+		body.enter_mining_zone(self)
 		emit_signal("player_entered", self)
 
 func _on_body_exited(body: Node3D) -> void:
 	if body.is_in_group("player"):
-		body.exit_pan_zone()
+		body.exit_mining_zone()
 		emit_signal("player_exited", self)
