@@ -153,50 +153,54 @@ func _spawn_camp() -> void:
 	var TENT_POS  := Vector3(10.0, 0.0, 12.0)
 	var FIRE_POS  := Vector3(6.5,  0.0, 10.5)
 
-	# ── Tent — pyramid shape
+	# ── Tent — buckskinner A-frame wedge tent, open front facing the fire
+	# PrismMesh: triangle cross-section in X-Y plane, ridge runs along Z.
+	# We rotate so the opening faces the campfire (SW of tent).
+	var tent_dir: float = atan2(FIRE_POS.x - TENT_POS.x, FIRE_POS.z - TENT_POS.z)
+
 	var tent := MeshInstance3D.new()
-	var tm   := CylinderMesh.new()
-	tm.top_radius      = 0.08
-	tm.bottom_radius   = 2.2
-	tm.height          = 2.6
-	tm.radial_segments = 4
-	tm.rings           = 1
-	tent.mesh     = tm
-	tent.position = TENT_POS + Vector3(0, 1.3, 0)
-	tent.rotation.y = PI / 4.0
+	var prism := PrismMesh.new()
+	prism.size = Vector3(3.2, 2.2, 3.8)  # width, height, depth
+	tent.mesh     = prism
+	tent.position = TENT_POS + Vector3(0, 1.1, 0)
+	tent.rotation.y = tent_dir
 	add_child(tent)
 	_set_mat(tent, mat_canvas)
 
-	# Tent door — dark opening facing the fire
-	var door := MeshInstance3D.new()
-	var dm   := BoxMesh.new()
-	dm.size       = Vector3(0.9, 1.2, 0.05)
-	door.mesh     = dm
-	door.position = TENT_POS + Vector3(-1.52, 0.6, -1.52)
-	door.rotation.y = PI / 4.0
-	add_child(door)
-	_set_mat(door, _mat(Color(0.28, 0.18, 0.08)))
+	# Ridge pole — runs along the tent's Z axis (depth), sticking out front
+	var ridge := MeshInstance3D.new()
+	var ridge_m := CylinderMesh.new()
+	ridge_m.top_radius = 0.04; ridge_m.bottom_radius = 0.05; ridge_m.height = 4.4
+	ridge.mesh     = ridge_m
+	ridge.position = TENT_POS + Vector3(0, 2.2, 0)
+	ridge.rotation = Vector3(PI / 2.0, tent_dir, 0)
+	add_child(ridge)
+	_set_mat(ridge, mat_pole)
 
-	# Tent guy-rope stakes (4 small pegs around tent)
-	for angle in [0.0, PI/2.0, PI, 3.0*PI/2.0]:
-		var stake := MeshInstance3D.new()
-		var sm2   := CylinderMesh.new()
-		sm2.top_radius = 0.03; sm2.bottom_radius = 0.04; sm2.height = 0.35
-		stake.mesh     = sm2
-		stake.position = TENT_POS + Vector3(sin(angle) * 2.6, 0.17, cos(angle) * 2.6)
-		add_child(stake)
-		_set_mat(stake, mat_pole)
+	# Front and back center poles
+	for dir_sign in [1.0, -1.0]:
+		var pole := MeshInstance3D.new()
+		var pole_m := CylinderMesh.new()
+		pole_m.top_radius = 0.04; pole_m.bottom_radius = 0.06; pole_m.height = 2.5
+		pole.mesh = pole_m
+		var pole_offset := Vector3(sin(tent_dir) * 1.9 * dir_sign, 1.25, cos(tent_dir) * 1.9 * dir_sign)
+		pole.position = TENT_POS + pole_offset
+		add_child(pole)
+		_set_mat(pole, mat_pole)
 
-	# Bedroll visible inside tent (log sitting near entrance)
-	var bedroll := MeshInstance3D.new()
-	var brm     := CylinderMesh.new()
-	brm.top_radius = 0.18; brm.bottom_radius = 0.20; brm.height = 1.1
-	bedroll.mesh     = brm
-	bedroll.position = TENT_POS + Vector3(-0.3, 0.2, 0.3)
-	bedroll.rotation.z = PI / 2.0
-	bedroll.rotation.y = PI / 3.0
-	add_child(bedroll)
-	_set_mat(bedroll, _mat(Color(0.55, 0.40, 0.28)))
+	# Tent stakes — at the 4 bottom corners where canvas meets ground
+	var stake_fwd := Vector3(sin(tent_dir), 0, cos(tent_dir)) * 2.0
+	var stake_side := Vector3(cos(tent_dir), 0, -sin(tent_dir)) * 1.7
+	for fwd_sign in [-1.0, 1.0]:
+		for side_sign in [-1.0, 1.0]:
+			var stake := MeshInstance3D.new()
+			var sm2   := CylinderMesh.new()
+			sm2.top_radius = 0.03; sm2.bottom_radius = 0.04; sm2.height = 0.35
+			stake.mesh     = sm2
+			stake.position = TENT_POS + stake_fwd * fwd_sign + stake_side * side_sign + Vector3(0, 0.17, 0)
+			add_child(stake)
+			_set_mat(stake, mat_pole)
+
 
 	# Tree stump seat near fire
 	var stump := MeshInstance3D.new()
