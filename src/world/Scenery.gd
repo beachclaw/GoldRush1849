@@ -158,13 +158,17 @@ func _spawn_camp() -> void:
 	# We rotate so the opening faces the campfire (SW of tent).
 	var tent_dir: float = atan2(FIRE_POS.x - TENT_POS.x, FIRE_POS.z - TENT_POS.z)
 
+	var tent_root := Node3D.new()
+	tent_root.name = "Tent"
+	add_child(tent_root)
+
 	var tent := MeshInstance3D.new()
 	var prism := PrismMesh.new()
 	prism.size = Vector3(3.2, 2.2, 3.8)  # width, height, depth
 	tent.mesh     = prism
 	tent.position = TENT_POS + Vector3(0, 1.1, 0)
 	tent.rotation.y = tent_dir
-	add_child(tent)
+	tent_root.add_child(tent)
 	_set_mat(tent, mat_canvas)
 
 	# Ridge pole — runs along the tent's Z axis (depth), sticking out front
@@ -174,7 +178,7 @@ func _spawn_camp() -> void:
 	ridge.mesh     = ridge_m
 	ridge.position = TENT_POS + Vector3(0, 2.2, 0)
 	ridge.rotation = Vector3(PI / 2.0, tent_dir, 0)
-	add_child(ridge)
+	tent_root.add_child(ridge)
 	_set_mat(ridge, mat_pole)
 
 	# Front and back center poles
@@ -185,7 +189,7 @@ func _spawn_camp() -> void:
 		pole.mesh = pole_m
 		var pole_offset := Vector3(sin(tent_dir) * 1.9 * dir_sign, 1.25, cos(tent_dir) * 1.9 * dir_sign)
 		pole.position = TENT_POS + pole_offset
-		add_child(pole)
+		tent_root.add_child(pole)
 		_set_mat(pole, mat_pole)
 
 	# Tent stakes — at the 4 bottom corners where canvas meets ground
@@ -198,8 +202,21 @@ func _spawn_camp() -> void:
 			sm2.top_radius = 0.03; sm2.bottom_radius = 0.04; sm2.height = 0.35
 			stake.mesh     = sm2
 			stake.position = TENT_POS + stake_fwd * fwd_sign + stake_side * side_sign + Vector3(0, 0.17, 0)
-			add_child(stake)
+			tent_root.add_child(stake)
 			_set_mat(stake, mat_pole)
+
+	# Collision — solid box matching tent footprint, rotated to match tent
+	var tent_body := StaticBody3D.new()
+	tent_body.name = "TentCollision"
+	tent_body.position = TENT_POS + Vector3(0, 1.1, 0)
+	tent_body.rotation.y = tent_dir
+	tent_root.add_child(tent_body)
+
+	var tent_col := CollisionShape3D.new()
+	var tent_box := BoxShape3D.new()
+	tent_box.size = Vector3(3.2, 2.2, 3.8)
+	tent_col.shape = tent_box
+	tent_body.add_child(tent_col)
 
 
 	# Tree stump seat near fire
