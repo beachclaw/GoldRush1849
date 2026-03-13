@@ -113,11 +113,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Store open
-	if event.is_action_pressed("ui_accept") and _near_store and not store_ui.visible \
-			and not pause_menu.visible and not inventory.visible:
-		store_ui.open()
-		get_viewport().set_input_as_handled()
 
 # ─── Zone signals ─────────────────────────────────────────────────────────────
 
@@ -139,11 +134,11 @@ func _on_zone_exited(_zone) -> void:
 
 func _on_store_entered() -> void:
 	_near_store = true
-	hud.set_prompt("SPACE — General Store")
+	if not store_ui.visible and not pause_menu.visible and not inventory.visible:
+		store_ui.open()
 
 func _on_store_exited() -> void:
 	_near_store = false
-	hud.set_prompt("")
 
 func _on_store_closed() -> void:
 	pass

@@ -637,6 +637,18 @@ func _spawn_store_building() -> void:
 	_store_box(store_root, Vector3(CX + 2.0, 0.47, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
 	_store_box(store_root, Vector3(CX + 2.0, 0.97, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
 
+	# ── 12. Collision — solid box covering entire building footprint ───────
+	var wall_body := StaticBody3D.new()
+	wall_body.name = "StoreWalls"
+	store_root.add_child(wall_body)
+
+	var col_shape := CollisionShape3D.new()
+	var col_box := BoxShape3D.new()
+	col_box.size = Vector3(6.0, 4.0, 5.0)
+	col_shape.shape = col_box
+	col_shape.position = Vector3(CX, 2.0, CZ)
+	wall_body.add_child(col_shape)
+
 func _store_box(parent: Node3D, pos: Vector3, size: Vector3, mat: StandardMaterial3D) -> void:
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
@@ -700,15 +712,6 @@ func _spawn_loose_earth() -> void:
 	add_child(patch)
 	_set_mat(patch, _mat(Color(0.38, 0.26, 0.14)))
 
-	# Small mound hint
-	var mound := MeshInstance3D.new()
-	var mm    := SphereMesh.new()
-	mm.radius = 0.5; mm.height = 0.4
-	mound.mesh     = mm
-	mound.position = Vector3(3, 0.2, 2)
-	mound.scale    = Vector3(2.5, 0.4, 1.8)
-	add_child(mound)
-	_set_mat(mound, _mat(Color(0.42, 0.30, 0.16)))
 
 # ─── Rich Vein Markers ────────────────────────────────────────────────────────
 
