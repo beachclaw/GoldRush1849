@@ -42,47 +42,53 @@ func _on_gold_changed(amount: float) -> void:
 func _build_pan_tool() -> void:
 	var tool_root := Node3D.new()
 	tool_root.name = "ToolRoot"
-	# Hold pan flat at hand level, extended forward/outward — not a stick!
 	tool_root.position = Vector3(0.18, -0.05, 0.28)
 	$Body/RightArm.add_child(tool_root)
 
-	var mat_pan   := StandardMaterial3D.new()
-	mat_pan.albedo_color = Color(0.50, 0.44, 0.32)
-	mat_pan.metallic     = 0.25
-	mat_pan.roughness    = 0.65
+	# Weathered tin/iron — authentic 1850s gold pan colors
+	var mat_tin := StandardMaterial3D.new()
+	mat_tin.albedo_color = Color(0.48, 0.44, 0.40)
+	mat_tin.metallic     = 0.55
+	mat_tin.roughness    = 0.50
 
 	var mat_inner := StandardMaterial3D.new()
-	mat_inner.albedo_color = Color(0.28, 0.24, 0.16)
+	mat_inner.albedo_color = Color(0.38, 0.32, 0.26)
+	mat_inner.metallic     = 0.4
+	mat_inner.roughness    = 0.65
 
-	var mat_wood  := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.38, 0.24, 0.10)
+	var mat_rim := StandardMaterial3D.new()
+	mat_rim.albedo_color = Color(0.42, 0.38, 0.34)
+	mat_rim.metallic     = 0.6
+	mat_rim.roughness    = 0.40
 
-	# Pan rim — wide shallow bowl held horizontally
-	var rim := MeshInstance3D.new()
-	var rm  := CylinderMesh.new()
-	rm.top_radius = 0.20; rm.bottom_radius = 0.23; rm.height = 0.07; rm.radial_segments = 12
-	rim.mesh = rm
-	tool_root.add_child(rim)
-	rim.set_surface_override_material(0, mat_pan)
+	# Outer bowl — wide shallow dish, sloped sides (wider at top, narrow bottom)
+	var bowl := MeshInstance3D.new()
+	var bm   := CylinderMesh.new()
+	bm.top_radius = 0.28; bm.bottom_radius = 0.15; bm.height = 0.09
+	bm.radial_segments = 16
+	bowl.mesh = bm
+	tool_root.add_child(bowl)
+	bowl.set_surface_override_material(0, mat_tin)
 
-	# Pan inner floor (slightly recessed, darker)
+	# Inner floor — flat dark bottom visible inside the pan
 	var floor_mi := MeshInstance3D.new()
 	var fm       := CylinderMesh.new()
-	fm.top_radius = 0.13; fm.bottom_radius = 0.15; fm.height = 0.04; fm.radial_segments = 12
+	fm.top_radius = 0.14; fm.bottom_radius = 0.14; fm.height = 0.015
+	fm.radial_segments = 16
 	floor_mi.mesh     = fm
-	floor_mi.position = Vector3(0, 0.015, 0)
+	floor_mi.position = Vector3(0, 0.01, 0)
 	tool_root.add_child(floor_mi)
 	floor_mi.set_surface_override_material(0, mat_inner)
 
-	# Short side handle — extends to the side, not upward
-	var handle := MeshInstance3D.new()
-	var hm     := CylinderMesh.new()
-	hm.top_radius = 0.022; hm.bottom_radius = 0.028; hm.height = 0.24
-	handle.mesh     = hm
-	handle.position = Vector3(-0.24, -0.01, 0)
-	handle.rotation.z = PI / 2.0   # horizontal
-	tool_root.add_child(handle)
-	handle.set_surface_override_material(0, mat_wood)
+	# Rolled rim — thin ring at the top lip
+	var rim := MeshInstance3D.new()
+	var rim_m := TorusMesh.new()
+	rim_m.inner_radius = 0.27; rim_m.outer_radius = 0.29
+	rim_m.rings = 12; rim_m.ring_segments = 8
+	rim.mesh     = rim_m
+	rim.position = Vector3(0, 0.04, 0)
+	tool_root.add_child(rim)
+	rim.set_surface_override_material(0, mat_rim)
 
 # ─── Physics ──────────────────────────────────────────────────────────────────
 
