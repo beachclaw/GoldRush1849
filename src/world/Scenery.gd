@@ -382,7 +382,7 @@ func _spawn_trees(count: int) -> void:
 	while placed < count and attempts < count * 5:
 		attempts += 1
 		var pos := _rand_pos()
-		if _near_river(pos.x) or _near_origin(pos.x, pos.z):
+		if _near_river(pos.x) or _near_origin(pos.x, pos.z) or _near_store(pos.x, pos.z):
 			continue
 		_place_tree(pos)
 		placed += 1
@@ -469,7 +469,7 @@ func _spawn_timber_groves() -> void:
 func _spawn_rocks(count: int) -> void:
 	for i in range(count):
 		var pos := _rand_pos()
-		if _near_origin(pos.x, pos.z):
+		if _near_origin(pos.x, pos.z) or _near_store(pos.x, pos.z):
 			continue
 		_place_rock(pos, rng.randf_range(0.3, 1.2))
 
@@ -527,7 +527,7 @@ func _spawn_store_building() -> void:
 	var mat_porch   := _mat(Color(0.50, 0.38, 0.20))  # porch planks
 
 	var CX: float = -6.0   # building centre X  (NW of spawn, facing south)
-	var CZ: float = -5.0   # building centre Z
+	var CZ: float = 6.4    # building centre Z  (front face at ~3.9, body extends behind false front)
 
 	# ── 1. Main building body ──────────────────────────────────────────────
 	_store_box(Vector3(CX, 1.6, CZ), Vector3(6.0, 3.2, 5.0), mat_wall)
@@ -541,6 +541,17 @@ func _spawn_store_building() -> void:
 	# Cream lettering background strip
 	_store_box(Vector3(CX, 4.75, 3.70), Vector3(4.6, 0.55, 0.06), mat_sign_bg)
 
+	# Sign text
+	var sign_label := Label3D.new()
+	sign_label.text = "Wild West Depot"
+	sign_label.font_size = 72
+	sign_label.position = Vector3(CX, 4.75, 3.66)
+	sign_label.rotation.y = PI
+	sign_label.modulate = Color(0.18, 0.08, 0.04)
+	sign_label.outline_modulate = Color(0.18, 0.08, 0.04)
+	sign_label.pixel_size = 0.005
+	add_child(sign_label)
+
 	# False front cap (top trim)
 	_store_box(Vector3(CX, 5.78, 3.88), Vector3(6.3, 0.22, 0.30), mat_dark)
 
@@ -549,20 +560,20 @@ func _spawn_store_building() -> void:
 	var rrm       := CylinderMesh.new()
 	rrm.top_radius = 0.05; rrm.bottom_radius = 3.5; rrm.height = 1.4; rrm.radial_segments = 4
 	rear_roof.mesh     = rrm
-	rear_roof.position = Vector3(CX, 3.9, CZ + 0.4)
+	rear_roof.position = Vector3(CX, 3.9, CZ)
 	rear_roof.rotation.y = PI / 4.0
 	add_child(rear_roof)
 	_set_mat(rear_roof, mat_roof_sh)
 
 	# ── 4. Porch floor (raised platform) ──────────────────────────────────
-	_store_box(Vector3(CX, 0.12, 2.3), Vector3(6.2, 0.24, 2.6), mat_porch)
+	_store_box(Vector3(CX, 0.12, 2.45), Vector3(6.2, 0.24, 2.9), mat_porch)
 
 	# Porch floor planks lines (thin dark strips for plank detail)
 	for i in range(-2, 3):
-		_store_box(Vector3(CX + i * 1.1, 0.25, 2.3), Vector3(0.06, 0.01, 2.6), mat_dark)
+		_store_box(Vector3(CX + i * 1.1, 0.25, 2.45), Vector3(0.06, 0.01, 2.9), mat_dark)
 
 	# ── 5. Porch awning ────────────────────────────────────────────────────
-	_store_box(Vector3(CX, 2.82, 2.2), Vector3(6.4, 0.16, 2.8), mat_dark)
+	_store_box(Vector3(CX, 2.82, 2.35), Vector3(6.4, 0.16, 3.1), mat_dark)
 
 	# ── 6. Porch posts (3 posts) ───────────────────────────────────────────
 	for px in [-2.2, 0.0, 2.2]:
@@ -831,3 +842,7 @@ func _near_river(x: float) -> bool:
 
 func _near_origin(x: float, z: float) -> bool:
 	return Vector2(x, z).length() < 5.0
+
+func _near_store(x: float, z: float) -> bool:
+	# Store building spans roughly x=-9..-3, z=0..10 — keep trees well clear
+	return x > -11.0 and x < -1.0 and z > -1.0 and z < 11.0
