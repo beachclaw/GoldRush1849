@@ -43,6 +43,16 @@ const TOOLS: Dictionary = {
 		"action_time":  4.0,
 		"unlock_cost":  50,
 	},
+	"axe": {
+		"name":         "Axe",
+		"icon":         "🪓",
+		"yield_min":    0.0,
+		"yield_max":    0.0,
+		"lucky_chance": 0.0,
+		"lucky_mult":   1.0,
+		"action_time":  1.0,
+		"unlock_cost":  10,
+	},
 }
 
 func calculate_yield(tool_id: String, quality: float = 1.0) -> Dictionary:

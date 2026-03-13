@@ -44,7 +44,7 @@ godot --path . --headless --export-release "macOS" builds/mac/GoldRush1849.dmg
 MiningZone.player_entered → Game → HUD.set_tool() + HUD.set_prompt()
 Player.mining_started     → Game → Audio.play() + HUD.show_mining()
 Player.mining_finished    → Game → SaveManager.add_gold() → gold_changed → HUD update
-                                 → Audio (chime/fanfare) + camera shake (if lucky)
+								 → Audio (chime/fanfare) + camera shake (if lucky)
 SaveManager.gold_changed  → Game (progression checks: cabin at 100g, demo end at 500g)
 SaveManager.tool_unlocked → HUD (notification display)
 ```
@@ -78,6 +78,37 @@ Uses `gl_compatibility` renderer with ETC2/ASTC texture compression. 1920×1080 
 - **Camera uses spring arm** — `CameraController.gd` implements orbit camera with raycast collision avoidance. Mouse sensitivity saved to `user://settings.cfg`.
 - **Save files:** game state in `user://save.json`, settings in `user://settings.cfg`.
 - **GDExtension (`gdextension/src/`)** exists but is empty — C++ performance layer planned for v1.1+.
+
+## Sub-Agent Workflow (for beachClaw's coding agents)
+
+When you are spawned as a sub-agent to implement a feature:
+
+1. **Check your branch first** — run `git branch --show-current`. If you're on `main`, stop and create a feature branch:
+   ```
+   git checkout -b feat/<short-name>
+   ```
+   Never commit directly to `main`.
+2. **Run tests** before committing:
+   ```
+   python tests/run_tests.py
+   ```
+   All tests must pass. Fix failures before proceeding.
+3. **Commit** your changes with a descriptive message
+4. **Push** your branch:
+   ```
+   git push -u origin <branch-name>
+   ```
+5. **Open a PR** via gh CLI:
+   ```
+   gh pr create --title "<short title>" --body "<what was built and why>" --base main
+   ```
+   Include in the PR body: what changed, why, and test results summary.
+6. **Notify** when done:
+   ```
+   openclaw system event --text "PR ready: <title> — <pr url>" --mode now
+   ```
+
+Do NOT merge your own PR. Just open it and notify.
 
 ## Conventions
 

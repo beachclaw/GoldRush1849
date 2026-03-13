@@ -1,5 +1,7 @@
 extends CharacterBody3D
 
+const ToolMeshesClass = preload("res://src/entities/ToolMeshes.gd")
+
 const SPEED = 5.0
 const GRAVITY = 9.8
 
@@ -28,67 +30,31 @@ signal cabin_placed(zone)
 @onready var left_leg: MeshInstance3D  = $Body/LeftLeg
 @onready var right_leg: MeshInstance3D = $Body/RightLeg
 
+var _tool_mount: Node3D  # attachment point on right arm
+var _active_tool: Node3D # currently equipped tool mesh
+
 func _ready() -> void:
 	add_to_group("player")
-	_build_pan_tool()
+	# Create mount point on right arm
+	_tool_mount = Node3D.new()
+	_tool_mount.name = "ToolMount"
+	_tool_mount.position = Vector3(0.18, -0.05, 0.28)
+	$Body/RightArm.add_child(_tool_mount)
+	equip_tool("pan")
 	# Sync gold from save
 	SaveManager.gold_changed.connect(_on_gold_changed)
 
 func _on_gold_changed(amount: float) -> void:
 	pass  # HUD listens directly to SaveManager
 
-# ─── Tool mesh ────────────────────────────────────────────────────────────────
+# ─── Tool equip ───────────────────────────────────────────────────────────────
 
-func _build_pan_tool() -> void:
-	var tool_root := Node3D.new()
-	tool_root.name = "ToolRoot"
-	tool_root.position = Vector3(0.18, -0.05, 0.28)
-	$Body/RightArm.add_child(tool_root)
-
-	# Weathered tin/iron — authentic 1850s gold pan colors
-	var mat_tin := StandardMaterial3D.new()
-	mat_tin.albedo_color = Color(0.48, 0.44, 0.40)
-	mat_tin.metallic     = 0.55
-	mat_tin.roughness    = 0.50
-
-	var mat_inner := StandardMaterial3D.new()
-	mat_inner.albedo_color = Color(0.38, 0.32, 0.26)
-	mat_inner.metallic     = 0.4
-	mat_inner.roughness    = 0.65
-
-	var mat_rim := StandardMaterial3D.new()
-	mat_rim.albedo_color = Color(0.42, 0.38, 0.34)
-	mat_rim.metallic     = 0.6
-	mat_rim.roughness    = 0.40
-
-	# Outer bowl — wide shallow dish, sloped sides (wider at top, narrow bottom)
-	var bowl := MeshInstance3D.new()
-	var bm   := CylinderMesh.new()
-	bm.top_radius = 0.28; bm.bottom_radius = 0.15; bm.height = 0.09
-	bm.radial_segments = 16
-	bowl.mesh = bm
-	tool_root.add_child(bowl)
-	bowl.set_surface_override_material(0, mat_tin)
-
-	# Inner floor — flat dark bottom visible inside the pan
-	var floor_mi := MeshInstance3D.new()
-	var fm       := CylinderMesh.new()
-	fm.top_radius = 0.14; fm.bottom_radius = 0.14; fm.height = 0.015
-	fm.radial_segments = 16
-	floor_mi.mesh     = fm
-	floor_mi.position = Vector3(0, 0.01, 0)
-	tool_root.add_child(floor_mi)
-	floor_mi.set_surface_override_material(0, mat_inner)
-
-	# Rolled rim — thin ring at the top lip
-	var rim := MeshInstance3D.new()
-	var rim_m := TorusMesh.new()
-	rim_m.inner_radius = 0.27; rim_m.outer_radius = 0.29
-	rim_m.rings = 12; rim_m.ring_segments = 8
-	rim.mesh     = rim_m
-	rim.position = Vector3(0, 0.04, 0)
-	tool_root.add_child(rim)
-	rim.set_surface_override_material(0, mat_rim)
+func equip_tool(tool_id: String) -> void:
+	if _active_tool:
+		_active_tool.queue_free()
+		_active_tool = null
+	_active_tool = ToolMeshesClass.create(tool_id)
+	_tool_mount.add_child(_active_tool)
 
 # ─── Physics ──────────────────────────────────────────────────────────────────
 
@@ -164,7 +130,6 @@ func enter_mining_zone(zone) -> void:
 
 func exit_mining_zone() -> void:
 	current_zone = null
-	current_tool = "pan"  # default back to pan
 
 # ─── Timber zone entry / exit ────────────────────────────────────────────────
 
@@ -189,7 +154,7 @@ const CHOPS_PER_LOG := 3
 const CHOP_TIME     := 1.0   # seconds per swing
 
 func _start_chopping() -> void:
-	if not SaveManager.has_tool("pickaxe"):
+	if not SaveManager.has_tool("axe"):
 		mining_started.emit("locked")
 		return
 

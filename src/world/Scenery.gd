@@ -443,6 +443,17 @@ func _place_tree(pos: Vector3) -> void:
 		root.add_child(canopy)
 		_set_mat(canopy, leaf_mat)
 
+	# Trunk collision
+	var body := StaticBody3D.new()
+	body.position.y = trunk_h / 2.0
+	root.add_child(body)
+	var col := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.25
+	capsule.height = trunk_h
+	col.shape = capsule
+	body.add_child(col)
+
 # ─── Timber Groves ────────────────────────────────────────────────────────────
 
 var timber_zones: Array = []   # populated for Game.gd to wire signals
@@ -495,20 +506,32 @@ func _spawn_rocks(count: int) -> void:
 		_place_rock(pos, rng.randf_range(0.3, 1.2))
 
 func _place_rock(pos: Vector3, size: float) -> void:
-	var rock := MeshInstance3D.new()
-	var mesh := SphereMesh.new()
-	mesh.radius = size * 0.5
-	mesh.height = size * rng.randf_range(0.55, 0.9)
-	rock.mesh       = mesh
-	rock.position   = Vector3(pos.x, size * 0.12, pos.z)
-	rock.rotation.y = rng.randf_range(0.0, TAU)
-	rock.scale      = Vector3(
+	var root := Node3D.new()
+	root.position = Vector3(pos.x, size * 0.12, pos.z)
+	root.rotation.y = rng.randf_range(0.0, TAU)
+	root.scale = Vector3(
 		rng.randf_range(0.8, 1.4),
 		rng.randf_range(0.6, 1.0),
 		rng.randf_range(0.8, 1.4)
 	)
-	add_child(rock)
+	add_child(root)
+
+	var rock := MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = size * 0.5
+	mesh.height = size * rng.randf_range(0.55, 0.9)
+	rock.mesh = mesh
+	root.add_child(rock)
 	_set_mat(rock, mat_rock)
+
+	# Rock collision
+	var body := StaticBody3D.new()
+	root.add_child(body)
+	var col := CollisionShape3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = size * 0.45
+	col.shape = sphere
+	body.add_child(col)
 
 # ─── River Banks ──────────────────────────────────────────────────────────────
 

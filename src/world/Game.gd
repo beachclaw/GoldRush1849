@@ -47,6 +47,7 @@ func _ready() -> void:
 		czone.player_exited.connect(_on_cabin_zone_exited)
 
 	# Wire UI
+	hud.tool_selected.connect(_on_tool_selected)
 	store_ui.closed.connect(_on_store_closed)
 	pause_menu.get_node("Panel/VBox/ResumeBtn").pressed.connect(pause_menu._on_resume_pressed)
 	pause_menu.get_node("Panel/VBox/SaveBtn").pressed.connect(pause_menu._on_save_pressed)
@@ -116,10 +117,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ─── Zone signals ─────────────────────────────────────────────────────────────
 
+func _on_tool_selected(tool_id: String) -> void:
+	player.current_tool = tool_id
+	player.equip_tool(tool_id)
+
 func _on_zone_entered(zone) -> void:
 	var tool_id: String = zone.get_tool_id()
 	_current_zone = zone.zone_name.to_lower().replace(" ", "_")
-	hud.set_tool(tool_id)
 	if SaveManager.has_tool(tool_id) or tool_id == "pan":
 		hud.set_prompt("SPACE — %s" % zone.zone_name)
 	else:
@@ -130,7 +134,6 @@ func _on_zone_entered(zone) -> void:
 func _on_zone_exited(_zone) -> void:
 	_current_zone = ""
 	hud.set_prompt("")
-	hud.set_tool("pan")
 
 func _on_store_entered() -> void:
 	_near_store = true
@@ -141,15 +144,15 @@ func _on_store_exited() -> void:
 	_near_store = false
 
 func _on_store_closed() -> void:
-	pass
+	hud._refresh_hotbar()
 
 # ─── Timber zone signals ─────────────────────────────────────────────────────
 
 func _on_timber_zone_entered(zone) -> void:
-	if SaveManager.has_tool("pickaxe"):
+	if SaveManager.has_tool("axe"):
 		hud.set_prompt("SPACE — Chop trees (%s)" % zone.zone_name)
 	else:
-		hud.set_prompt("Need Pickaxe — buy at store (20g)")
+		hud.set_prompt("Need Axe — buy at store (10g)")
 
 func _on_timber_zone_exited(_zone) -> void:
 	hud.set_prompt("")

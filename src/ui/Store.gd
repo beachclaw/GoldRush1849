@@ -3,11 +3,12 @@ extends CanvasLayer
 signal closed
 
 const ITEMS := [
-	{ "id": "shovel",     "label": "Shovel",      "desc": "Fast, low yield. Works loose earth.",          "cost": 15  },
-	{ "id": "pickaxe",    "label": "Pickaxe",      "desc": "Medium yield. Works rock faces.",             "cost": 20  },
-	{ "id": "better_pan", "label": "Better Pan",   "desc": "Upgraded pan. 1.5x river yield.",             "cost": 30  },
-	{ "id": "sluice_box", "label": "Sluice Box",   "desc": "High yield river tool.",                      "cost": 50  },
-	{ "id": "cabin_kit",  "label": "Cabin Kit",    "desc": "Upgrade tent to cabin. Requires 5 timber.",   "cost": 100, "timber_cost": 5 },
+	{ "id": "axe",        "label": "Axe",          "desc": "Chop trees for timber.",                      "cost": 10  },
+	{ "id": "shovel",     "label": "Shovel",        "desc": "Fast, low yield. Works loose earth.",        "cost": 15  },
+	{ "id": "pickaxe",    "label": "Pickaxe",       "desc": "Medium yield. Works rock faces.",            "cost": 20  },
+	{ "id": "better_pan", "label": "Better Pan",    "desc": "Upgraded pan. 1.5x river yield.",            "cost": 30  },
+	{ "id": "sluice_box", "label": "Sluice Box",    "desc": "High yield river tool.",                     "cost": 50  },
+	{ "id": "cabin_kit",  "label": "Cabin Kit",     "desc": "Upgrade tent to cabin. Requires 5 timber.",  "cost": 100, "timber_cost": 5 },
 ]
 
 # Warm color palette
