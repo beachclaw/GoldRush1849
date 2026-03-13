@@ -5,3 +5,6 @@ export_presets.cfg
 user://
 builds/
 .DS_Store
+node_modules/
+test-results/
+__pycache__/
