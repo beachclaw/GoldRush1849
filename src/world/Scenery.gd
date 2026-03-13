@@ -513,6 +513,10 @@ func _spawn_store_building() -> void:
 	# Historically accurate 1849 California gold rush general store:
 	# False front, covered porch with posts, clapboard siding, barrels, crates
 
+	var store_root := Node3D.new()
+	store_root.name = "Store"
+	add_child(store_root)
+
 	# ── Materials ──────────────────────────────────────────────────────────
 	var mat_wall    := _mat(Color(0.62, 0.48, 0.30))  # weathered clapboard
 	var mat_dark    := _mat(Color(0.28, 0.18, 0.10))  # dark trim / posts
@@ -530,16 +534,16 @@ func _spawn_store_building() -> void:
 	var CZ: float = 6.4    # building centre Z  (front face at ~3.9, body extends behind false front)
 
 	# ── 1. Main building body ──────────────────────────────────────────────
-	_store_box(Vector3(CX, 1.6, CZ), Vector3(6.0, 3.2, 5.0), mat_wall)
+	_store_box(store_root, Vector3(CX, 1.6, CZ), Vector3(6.0, 3.2, 5.0), mat_wall)
 
 	# ── 2. False front ─────────────────────────────────────────────────────
 	# Flat panel sitting flush with front face (z = CZ-2.5 = 4.0), extends ~2m above roofline
-	_store_box(Vector3(CX, 2.85, 3.88), Vector3(6.0, 5.7, 0.22), mat_false)
+	_store_box(store_root, Vector3(CX, 2.85, 3.88), Vector3(6.0, 5.7, 0.22), mat_false)
 
 	# Sign board on false front (upper section)
-	_store_box(Vector3(CX, 4.75, 3.76), Vector3(5.2, 0.95, 0.12), mat_sign)
+	_store_box(store_root, Vector3(CX, 4.75, 3.76), Vector3(5.2, 0.95, 0.12), mat_sign)
 	# Cream lettering background strip
-	_store_box(Vector3(CX, 4.75, 3.70), Vector3(4.6, 0.55, 0.06), mat_sign_bg)
+	_store_box(store_root, Vector3(CX, 4.75, 3.70), Vector3(4.6, 0.55, 0.06), mat_sign_bg)
 
 	# Sign text
 	var sign_label := Label3D.new()
@@ -550,10 +554,10 @@ func _spawn_store_building() -> void:
 	sign_label.modulate = Color(0.18, 0.08, 0.04)
 	sign_label.outline_modulate = Color(0.18, 0.08, 0.04)
 	sign_label.pixel_size = 0.005
-	add_child(sign_label)
+	store_root.add_child(sign_label)
 
 	# False front cap (top trim)
-	_store_box(Vector3(CX, 5.78, 3.88), Vector3(6.3, 0.22, 0.30), mat_dark)
+	_store_box(store_root, Vector3(CX, 5.78, 3.88), Vector3(6.3, 0.22, 0.30), mat_dark)
 
 	# ── 3. Rear roof (hidden behind false front) ───────────────────────────
 	var rear_roof := MeshInstance3D.new()
@@ -562,18 +566,18 @@ func _spawn_store_building() -> void:
 	rear_roof.mesh     = rrm
 	rear_roof.position = Vector3(CX, 3.9, CZ)
 	rear_roof.rotation.y = PI / 4.0
-	add_child(rear_roof)
+	store_root.add_child(rear_roof)
 	_set_mat(rear_roof, mat_roof_sh)
 
 	# ── 4. Porch floor (raised platform) ──────────────────────────────────
-	_store_box(Vector3(CX, 0.12, 2.45), Vector3(6.2, 0.24, 2.9), mat_porch)
+	_store_box(store_root, Vector3(CX, 0.12, 2.45), Vector3(6.2, 0.24, 2.9), mat_porch)
 
 	# Porch floor planks lines (thin dark strips for plank detail)
 	for i in range(-2, 3):
-		_store_box(Vector3(CX + i * 1.1, 0.25, 2.45), Vector3(0.06, 0.01, 2.9), mat_dark)
+		_store_box(store_root, Vector3(CX + i * 1.1, 0.25, 2.45), Vector3(0.06, 0.01, 2.9), mat_dark)
 
 	# ── 5. Porch awning ────────────────────────────────────────────────────
-	_store_box(Vector3(CX, 2.82, 2.35), Vector3(6.4, 0.16, 3.1), mat_dark)
+	_store_box(store_root, Vector3(CX, 2.82, 2.35), Vector3(6.4, 0.16, 3.1), mat_dark)
 
 	# ── 6. Porch posts (3 posts) ───────────────────────────────────────────
 	for px in [-2.2, 0.0, 2.2]:
@@ -582,21 +586,21 @@ func _spawn_store_building() -> void:
 		pm.top_radius = 0.09; pm.bottom_radius = 0.11; pm.height = 2.58
 		post.mesh     = pm
 		post.position = Vector3(CX + px, 1.41, 0.92)
-		add_child(post)
+		store_root.add_child(post)
 		_set_mat(post, mat_dark)
 
 	# ── 7. Steps (2 steps up to porch) ────────────────────────────────────
-	_store_box(Vector3(CX, 0.05, 0.78), Vector3(2.2, 0.10, 0.38), mat_porch)
-	_store_box(Vector3(CX, 0.14, 1.16), Vector3(2.2, 0.10, 0.38), mat_porch)
+	_store_box(store_root, Vector3(CX, 0.05, 0.78), Vector3(2.2, 0.10, 0.38), mat_porch)
+	_store_box(store_root, Vector3(CX, 0.14, 1.16), Vector3(2.2, 0.10, 0.38), mat_porch)
 
 	# ── 8. Door frame (dark recess on front face) ──────────────────────────
-	_store_box(Vector3(CX, 1.15, 3.80), Vector3(1.05, 2.30, 0.18), mat_door)
+	_store_box(store_root, Vector3(CX, 1.15, 3.80), Vector3(1.05, 2.30, 0.18), mat_door)
 
 	# ── 9. Windows ─────────────────────────────────────────────────────────
 	# Front window (left of door)
-	_store_box(Vector3(CX - 2.0, 1.85, 3.80), Vector3(0.95, 0.85, 0.12), mat_window)
+	_store_box(store_root, Vector3(CX - 2.0, 1.85, 3.80), Vector3(0.95, 0.85, 0.12), mat_window)
 	# Side window (left wall)
-	_store_box(Vector3(CX - 3.02, 1.85, CZ - 0.5), Vector3(0.10, 0.75, 0.90), mat_window)
+	_store_box(store_root, Vector3(CX - 3.02, 1.85, CZ - 0.5), Vector3(0.10, 0.75, 0.90), mat_window)
 
 	# ── 10. Barrels on porch (3, near left post) ───────────────────────────
 	var barrel_positions := [
@@ -610,7 +614,7 @@ func _spawn_store_building() -> void:
 		bm2.top_radius = 0.22; bm2.bottom_radius = 0.22; bm2.height = 0.50; bm2.radial_segments = 10
 		bar.mesh     = bm2
 		bar.position = bpos
-		add_child(bar)
+		store_root.add_child(bar)
 		_set_mat(bar, mat_barrel)
 		# Barrel rings
 		var ring := MeshInstance3D.new()
@@ -618,24 +622,24 @@ func _spawn_store_building() -> void:
 		rm2.top_radius = 0.235; rm2.bottom_radius = 0.235; rm2.height = 0.06; rm2.radial_segments = 10
 		ring.mesh     = rm2
 		ring.position = bpos
-		add_child(ring)
+		store_root.add_child(ring)
 		_set_mat(ring, mat_dark)
 
 	# ── 11. Crates near right post ─────────────────────────────────────────
-	_store_box(Vector3(CX + 2.0, 0.47, 1.5), Vector3(0.50, 0.50, 0.50), mat_crate)
-	_store_box(Vector3(CX + 2.0, 0.97, 1.5), Vector3(0.50, 0.50, 0.50), mat_crate)
+	_store_box(store_root, Vector3(CX + 2.0, 0.47, 1.5), Vector3(0.50, 0.50, 0.50), mat_crate)
+	_store_box(store_root, Vector3(CX + 2.0, 0.97, 1.5), Vector3(0.50, 0.50, 0.50), mat_crate)
 
 	# Crate cross-slat detail
-	_store_box(Vector3(CX + 2.0, 0.47, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
-	_store_box(Vector3(CX + 2.0, 0.97, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
+	_store_box(store_root, Vector3(CX + 2.0, 0.47, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
+	_store_box(store_root, Vector3(CX + 2.0, 0.97, 1.24), Vector3(0.48, 0.06, 0.04), mat_dark)
 
-func _store_box(pos: Vector3, size: Vector3, mat: StandardMaterial3D) -> void:
+func _store_box(parent: Node3D, pos: Vector3, size: Vector3, mat: StandardMaterial3D) -> void:
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size   = size
 	mi.mesh   = bm
 	mi.position = pos
-	add_child(mi)
+	parent.add_child(mi)
 	_set_mat(mi, mat)
 
 # ─── Rock Face ────────────────────────────────────────────────────────────────
