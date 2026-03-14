@@ -11,8 +11,8 @@ signal tool_selected(tool_id: String)
 @onready var notify_label:  Label       = $NotifyLabel
 
 # Hotbar — tool slots at bottom of screen
-const HOTBAR_TOOLS := ["pan", "axe", "shovel", "pickaxe", "sluice_box"]
-const HOTBAR_KEYS  := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5]
+const HOTBAR_TOOLS := ["pan", "axe", "shovel", "pickaxe"]
+const HOTBAR_KEYS  := [KEY_1, KEY_2, KEY_3, KEY_4]
 var _hotbar_container: HBoxContainer
 var _hotbar_slots: Array = []  # array of PanelContainer
 var _active_tool: String = "pan"

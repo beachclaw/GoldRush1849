@@ -74,7 +74,6 @@ func unlock_tool(tool_id: String) -> void:
 var _unlock_thresholds: Dictionary = {
 	15.0:  "shovel",
 	20.0:  "pickaxe",
-	50.0:  "sluice_box",
 }
 var _announced: Dictionary = {}
 

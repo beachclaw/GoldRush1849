@@ -3,7 +3,7 @@ extends CanvasLayer
 @onready var gold_val:  Label = $Panel/VBox/GoldRow/Val
 @onready var tools_box: VBoxContainer = $Panel/VBox/ToolsBox
 
-const ALL_TOOLS := ["pan", "pickaxe", "shovel", "sluice_box"]
+const ALL_TOOLS := ["pan", "pickaxe", "shovel"]
 
 func _ready() -> void:
 	visible = false
