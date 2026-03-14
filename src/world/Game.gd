@@ -1,6 +1,5 @@
 extends Node3D
 
-const DEMO_END_GOLD := 500.0
 const CABIN_GOLD    := 100.0
 
 @onready var player:      CharacterBody3D = $Player
@@ -177,41 +176,19 @@ func _on_cabin_placed(zone) -> void:
 	_build_cabin_at_zone(zone)
 	Audio.play("wood_collect", -4.0)
 	hud.show_message("Cabin placed!", 5.0)
+	# Cabin is the demo milestone — show end screen after a moment
+	if not _demo_ended:
+		_demo_ended = true
+		await get_tree().create_timer(3.0).timeout
+		demo_end.show_end(SaveManager.get_gold())
 
 func _build_cabin_at_zone(zone) -> void:
 	_cabin_built = true
-	# Remove the yellow marker
 	if zone.marker:
 		zone.marker.queue_free()
 		zone.marker = null
-
-	# Spawn a brown cabin box at the zone position
-	var mat_wood := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.42, 0.28, 0.14)
-	var mat_roof := StandardMaterial3D.new()
-	mat_roof.albedo_color = Color(0.25, 0.14, 0.08)
-
-	var cabin := MeshInstance3D.new()
-	var cm := BoxMesh.new()
-	cm.size = Vector3(3.8, 2.8, 3.5)
-	cabin.mesh = cm
-	cabin.position = zone.global_position + Vector3(0, 1.4, 0)
-	cabin.set_surface_override_material(0, mat_wood)
-	add_child(cabin)
-
-	var roof := MeshInstance3D.new()
-	var rm := CylinderMesh.new()
-	rm.top_radius = 0.05; rm.bottom_radius = 2.8; rm.height = 1.4; rm.radial_segments = 4
-	roof.mesh = rm
-	roof.position = zone.global_position + Vector3(0, 3.5, 0)
-	roof.rotation.y = PI / 4.0
-	roof.set_surface_override_material(0, mat_roof)
-	add_child(roof)
-
-	# Disable all cabin zone collisions
+	_spawn_log_cabin(zone.global_position)
 	_hide_cabin_zone_markers()
-
-	# Disable the zone so it doesn't fire again
 	zone.set_deferred("monitoring", false)
 
 func _hide_cabin_zone_markers() -> void:
@@ -271,11 +248,6 @@ func _on_gold_changed(amount: float) -> void:
 	if not _cabin_built and amount >= CABIN_GOLD and SaveManager.data.get("camp_level", 0) < 1:
 		Tutorial.show_step("cabin", "🏠 You can now upgrade to a Cabin! Visit the store.", 0.0)
 
-	# Demo end
-	if not _demo_ended and amount >= DEMO_END_GOLD:
-		_demo_ended = true
-		await get_tree().create_timer(2.0).timeout
-		demo_end.show_end(amount)
 
 func _on_tool_event(tool_id: String) -> void:
 	pass
@@ -285,27 +257,249 @@ func _on_tool_event(tool_id: String) -> void:
 func _build_cabin() -> void:
 	# Used when loading a save with cabin already placed — spawn at default position
 	_cabin_built = true
-	var mat_wood := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.42, 0.28, 0.14)
-	var mat_roof := StandardMaterial3D.new()
-	mat_roof.albedo_color = Color(0.25, 0.14, 0.08)
+	_spawn_log_cabin(Vector3(10, 0, 5))
 
-	var cabin := MeshInstance3D.new()
-	var cm := BoxMesh.new()
-	cm.size = Vector3(3.8, 2.8, 3.5)
-	cabin.mesh = cm
-	cabin.position = Vector3(10, 1.4, 5)
-	cabin.set_surface_override_material(0, mat_wood)
-	add_child(cabin)
+# ─── Log cabin builder ────────────────────────────────────────────────────────
+# Authentic 1850s gold rush log cabin: stacked horizontal logs with chinking,
+# gable roof, stone chimney, front porch, door, and windows.
 
-	var roof := MeshInstance3D.new()
-	var rm := CylinderMesh.new()
-	rm.top_radius = 0.05; rm.bottom_radius = 2.8; rm.height = 1.4; rm.radial_segments = 4
-	roof.mesh = rm
-	roof.position = Vector3(10, 3.5, 5)
-	roof.rotation.y = PI / 4.0
-	roof.set_surface_override_material(0, mat_roof)
-	add_child(roof)
+func _spawn_log_cabin(pos: Vector3) -> void:
+	var root := Node3D.new()
+	root.name = "Cabin"
+	root.position = pos
+	add_child(root)
+
+	# ── Materials ──────────────────────────────────────────────────────────
+	var mat_log     := _cabin_mat(Color(0.48, 0.36, 0.20), 0.85)  # weathered pine
+	var mat_log_dk  := _cabin_mat(Color(0.38, 0.28, 0.15), 0.90)  # alternating darker
+	var mat_chink   := _cabin_mat(Color(0.72, 0.66, 0.54), 0.95)  # mud/mortar chinking
+	var mat_roof    := _cabin_mat(Color(0.30, 0.22, 0.14), 0.90)  # dark wood shingles
+	var mat_stone   := _cabin_mat(Color(0.50, 0.48, 0.44), 0.95)  # chimney stone
+	var mat_stone_dk := _cabin_mat(Color(0.38, 0.36, 0.33), 0.95)  # darker stone
+	var mat_door    := _cabin_mat(Color(0.32, 0.22, 0.10), 0.88)  # plank door
+	var mat_window  := _cabin_mat(Color(0.22, 0.28, 0.38), 0.50)  # glass pane
+	var mat_sash    := _cabin_mat(Color(0.30, 0.20, 0.10), 0.90)  # window frame
+	var mat_porch   := _cabin_mat(Color(0.50, 0.38, 0.22), 0.88)  # porch planks
+	var mat_dark    := _cabin_mat(Color(0.18, 0.12, 0.06), 0.92)  # dark trim
+
+	# ── Dimensions ─────────────────────────────────────────────────────────
+	var W      := 4.2    # width (X)
+	var D      := 3.6    # depth (Z)
+	var log_r  := 0.14   # log radius
+	var log_d  := 0.28   # log diameter / vertical spacing
+	var n_logs := 8      # logs per wall
+	var wall_h := n_logs * log_d   # 2.24
+	var ovh    := 0.20   # corner overhang (log ends sticking out)
+	var door_w := 0.90   # door width
+	var door_n := 6      # bottom N logs have door gap
+	var ridge_h := 1.35  # gable peak above wall top
+
+	# ── Helper: horizontal log cylinder ────────────────────────────────────
+	# axis "x" = log runs along X, "z" = log runs along Z
+	var _add_log := func(length: float, radius: float, axis: String, p: Vector3, mat: StandardMaterial3D) -> void:
+		var mi := MeshInstance3D.new()
+		var cm := CylinderMesh.new()
+		cm.top_radius = radius; cm.bottom_radius = radius
+		cm.height = length; cm.radial_segments = 8
+		mi.mesh = cm
+		if axis == "x":
+			mi.rotation.z = PI / 2.0
+		else:
+			mi.rotation.x = PI / 2.0
+		mi.position = p
+		mi.set_surface_override_material(0, mat)
+		root.add_child(mi)
+
+	# ── Helper: box ────────────────────────────────────────────────────────
+	var _add_box := func(p: Vector3, s: Vector3, mat: StandardMaterial3D) -> void:
+		var mi := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = s
+		mi.mesh = bm; mi.position = p
+		mi.set_surface_override_material(0, mat)
+		root.add_child(mi)
+
+	# ── 1. Wall logs ───────────────────────────────────────────────────────
+	for i in range(n_logs):
+		var y := log_r + i * log_d
+		var mat: StandardMaterial3D = mat_log if i % 2 == 0 else mat_log_dk
+		var full_x := W + 2.0 * ovh   # full front/back log length
+		var full_z := D + 2.0 * ovh   # full side log length
+
+		# Back wall — full continuous log
+		_add_log.call(full_x, log_r, "x", Vector3(0, y, D / 2.0), mat)
+
+		# Front wall — split for door on lower logs
+		if i < door_n:
+			var seg := (W / 2.0 - door_w / 2.0) + ovh
+			_add_log.call(seg, log_r, "x", Vector3(-(door_w / 2.0 + seg / 2.0), y, -D / 2.0), mat)
+			_add_log.call(seg, log_r, "x", Vector3( (door_w / 2.0 + seg / 2.0), y, -D / 2.0), mat)
+		else:
+			_add_log.call(full_x, log_r, "x", Vector3(0, y, -D / 2.0), mat)
+
+		# Side walls
+		_add_log.call(full_z, log_r, "z", Vector3(-W / 2.0, y, 0), mat)
+		_add_log.call(full_z, log_r, "z", Vector3( W / 2.0, y, 0), mat)
+
+	# ── 2. Chinking (light strips between logs) ───────────────────────────
+	for i in range(n_logs - 1):
+		var y := log_d + i * log_d   # midpoint between log i and i+1
+		var ch := 0.05               # chinking strip height
+		var cd := 0.06               # chinking strip depth
+
+		# Back wall
+		_add_box.call(Vector3(0, y, D / 2.0 + log_r * 0.6), Vector3(W - 0.2, ch, cd), mat_chink)
+
+		# Front wall (with door gap)
+		if i < door_n - 1:
+			var sw := W / 2.0 - door_w / 2.0 - 0.15
+			_add_box.call(Vector3(-(door_w / 2.0 + sw / 2.0 + 0.05), y, -(D / 2.0 + log_r * 0.6)), Vector3(sw, ch, cd), mat_chink)
+			_add_box.call(Vector3( (door_w / 2.0 + sw / 2.0 + 0.05), y, -(D / 2.0 + log_r * 0.6)), Vector3(sw, ch, cd), mat_chink)
+		else:
+			_add_box.call(Vector3(0, y, -(D / 2.0 + log_r * 0.6)), Vector3(W - 0.2, ch, cd), mat_chink)
+
+		# Side walls
+		_add_box.call(Vector3(-(W / 2.0 + log_r * 0.6), y, 0), Vector3(cd, ch, D - 0.2), mat_chink)
+		_add_box.call(Vector3( (W / 2.0 + log_r * 0.6), y, 0), Vector3(cd, ch, D - 0.2), mat_chink)
+
+	# ── 3. Gable end triangles (stacked shorter logs) ─────────────────────
+	# Front and back gable: progressively shorter logs above wall top
+	var gable_logs := 5
+	for i in range(gable_logs):
+		var y := wall_h + log_r + i * log_d
+		var shrink := (float(i + 1) / float(gable_logs + 1)) * (W / 2.0)
+		var gable_len := W - 2.0 * shrink
+		if gable_len < 0.3:
+			break
+		var mat: StandardMaterial3D = mat_log if (n_logs + i) % 2 == 0 else mat_log_dk
+		# Front gable
+		_add_log.call(gable_len, log_r, "x", Vector3(0, y, -D / 2.0), mat)
+		# Back gable
+		_add_log.call(gable_len, log_r, "x", Vector3(0, y,  D / 2.0), mat)
+
+	# ── 4. Gable roof (two tilted planes) ─────────────────────────────────
+	var eave_ovh := 0.35   # roof overhang beyond walls
+	var half_w := W / 2.0 + eave_ovh
+	var slope_len := sqrt(half_w * half_w + ridge_h * ridge_h)
+	var roof_angle := atan2(ridge_h, half_w)
+	var roof_depth := D + 0.7  # front/back overhang
+	var roof_thick := 0.10
+
+	# Left roof plane
+	var left_roof := MeshInstance3D.new()
+	var lrm := BoxMesh.new()
+	lrm.size = Vector3(slope_len, roof_thick, roof_depth)
+	left_roof.mesh = lrm
+	left_roof.position = Vector3(-half_w / 2.0, wall_h + ridge_h / 2.0, 0)
+	left_roof.rotation.z = roof_angle
+	left_roof.set_surface_override_material(0, mat_roof)
+	root.add_child(left_roof)
+
+	# Right roof plane
+	var right_roof := MeshInstance3D.new()
+	right_roof.mesh = lrm   # reuse mesh
+	right_roof.position = Vector3(half_w / 2.0, wall_h + ridge_h / 2.0, 0)
+	right_roof.rotation.z = -roof_angle
+	right_roof.set_surface_override_material(0, mat_roof)
+	root.add_child(right_roof)
+
+	# Ridge beam (dark log along the peak)
+	_add_log.call(roof_depth, 0.08, "z", Vector3(0, wall_h + ridge_h + 0.02, 0), mat_dark)
+
+	# ── 5. Stone chimney (right side) ─────────────────────────────────────
+	var chim_x := W / 2.0 + 0.30
+	var chim_w := 0.70
+	var chim_d := 0.65
+	var chim_h := wall_h + ridge_h + 0.5
+
+	# Main chimney column
+	_add_box.call(Vector3(chim_x, chim_h / 2.0, 0), Vector3(chim_w, chim_h, chim_d), mat_stone)
+	# Chimney cap (slightly wider)
+	_add_box.call(Vector3(chim_x, chim_h + 0.06, 0), Vector3(chim_w + 0.12, 0.12, chim_d + 0.12), mat_stone_dk)
+	# Base (wider footing like the reference photos)
+	_add_box.call(Vector3(chim_x, 0.6, 0), Vector3(chim_w + 0.25, 1.2, chim_d + 0.20), mat_stone)
+	# Stone course lines (horizontal dark strips for stone rows)
+	for si in range(1, int(chim_h / 0.45)):
+		var sy := si * 0.45
+		if sy < chim_h - 0.2:
+			_add_box.call(Vector3(chim_x + chim_w / 2.0 + 0.01, sy, 0), Vector3(0.02, 0.03, chim_d - 0.08), mat_stone_dk)
+
+	# ── 6. Door ────────────────────────────────────────────────────────────
+	var door_h := door_n * log_d   # 1.68
+	# Door recess (dark opening)
+	_add_box.call(Vector3(0, door_h / 2.0, -(D / 2.0 + 0.02)), Vector3(door_w - 0.08, door_h - 0.06, 0.08), mat_dark)
+	# Door plank
+	_add_box.call(Vector3(0.08, door_h / 2.0, -(D / 2.0 + 0.06)), Vector3(door_w - 0.15, door_h - 0.10, 0.06), mat_door)
+	# Door frame (lintel log above door)
+	_add_log.call(door_w + 0.4, log_r + 0.02, "x", Vector3(0, door_h + 0.02, -(D / 2.0 + 0.04)), mat_log_dk)
+
+	# ── 7. Windows ─────────────────────────────────────────────────────────
+	var win_w := 0.55
+	var win_h := 0.50
+	var win_y := wall_h * 0.58   # ~58% up the wall
+
+	# Front windows (left and right of door)
+	for wx in [-1.25, 1.25]:
+		# Glass pane
+		_add_box.call(Vector3(wx, win_y, -(D / 2.0 + log_r + 0.01)), Vector3(win_w, win_h, 0.03), mat_window)
+		# Sash frame (4 bars forming a cross)
+		_add_box.call(Vector3(wx, win_y, -(D / 2.0 + log_r + 0.03)), Vector3(0.04, win_h + 0.06, 0.03), mat_sash)  # vertical
+		_add_box.call(Vector3(wx, win_y, -(D / 2.0 + log_r + 0.03)), Vector3(win_w + 0.06, 0.04, 0.03), mat_sash)  # horizontal
+
+	# Side windows (one per side wall)
+	for sz in [-1]:   # one window on left wall
+		_add_box.call(Vector3(-(W / 2.0 + log_r + 0.01), win_y, sz * 0.3), Vector3(0.03, win_h, win_w), mat_window)
+		_add_box.call(Vector3(-(W / 2.0 + log_r + 0.03), win_y, sz * 0.3), Vector3(0.03, win_h + 0.06, 0.04), mat_sash)
+		_add_box.call(Vector3(-(W / 2.0 + log_r + 0.03), win_y, sz * 0.3), Vector3(0.03, 0.04, win_w + 0.06), mat_sash)
+
+	# ── 8. Front porch ────────────────────────────────────────────────────
+	var porch_d := 1.4    # porch depth from front wall
+	var porch_w := W + 0.6
+
+	# Porch floor
+	_add_box.call(Vector3(0, 0.10, -(D / 2.0 + porch_d / 2.0)), Vector3(porch_w, 0.12, porch_d), mat_porch)
+
+	# Plank lines on porch floor
+	for pi in range(-2, 3):
+		_add_box.call(Vector3(pi * 0.9, 0.17, -(D / 2.0 + porch_d / 2.0)), Vector3(0.04, 0.01, porch_d), mat_dark)
+
+	# Porch posts (2 posts)
+	for px in [-(porch_w / 2.0 - 0.3), porch_w / 2.0 - 0.3]:
+		var post := MeshInstance3D.new()
+		var pm := CylinderMesh.new()
+		pm.top_radius = 0.07; pm.bottom_radius = 0.09; pm.height = wall_h * 0.85
+		pm.radial_segments = 8
+		post.mesh = pm
+		post.position = Vector3(px, wall_h * 0.85 / 2.0 + 0.16, -(D / 2.0 + porch_d - 0.15))
+		post.set_surface_override_material(0, mat_dark)
+		root.add_child(post)
+
+	# Porch roof (extends from front wall outward)
+	var porch_roof_angle := 0.12   # slight downward tilt
+	_add_box.call(
+		Vector3(0, wall_h * 0.85 + 0.22, -(D / 2.0 + porch_d / 2.0 - 0.1)),
+		Vector3(porch_w + 0.1, 0.08, porch_d + 0.3),
+		mat_roof
+	)
+
+	# Step up to porch
+	_add_box.call(Vector3(0, 0.04, -(D / 2.0 + porch_d + 0.18)), Vector3(1.2, 0.08, 0.35), mat_porch)
+
+	# ── 9. Collision body (simplified box for the whole cabin) ─────────────
+	var body := StaticBody3D.new()
+	body.position = Vector3(0, wall_h / 2.0, 0)
+	root.add_child(body)
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(W + 0.3, wall_h + 0.2, D + 0.3)
+	col.shape = shape
+	body.add_child(col)
+
+func _cabin_mat(color: Color, roughness: float = 0.85) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = color
+	m.roughness = roughness
+	return m
 
 # ─── Gold particles ───────────────────────────────────────────────────────────
 

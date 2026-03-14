@@ -9,7 +9,7 @@ func show_end(gold: float) -> void:
 	visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	stats_label.text = "Gold collected: %.2fg\n\nYou've staked your claim on the\nAmerican River. The rush has only begun." % gold
+	stats_label.text = "Gold collected: %.2fg\n\nFrom a bedroll by the river to a cabin\nof your own — you've made it, prospector.\nThe rush has only begun." % gold
 
 func _on_continue_pressed() -> void:
 	visible = false

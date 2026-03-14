@@ -24,6 +24,8 @@ func _ready() -> void:
 		MOUSE_SENSITIVITY = cfg.get_value("controls", "mouse_sensitivity", 0.003)
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		yaw   -= event.relative.x * MOUSE_SENSITIVITY
 		pitch -= event.relative.y * MOUSE_SENSITIVITY

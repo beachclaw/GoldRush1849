@@ -22,6 +22,13 @@ func _ready() -> void:
 	message_label.visible = false
 	notify_label.visible  = false
 	set_prompt("")
+	# Add dark outline to HUD labels for visibility against sky/clouds
+	for lbl: Label in [gold_label, timber_label, tool_label, prompt_label, message_label, notify_label]:
+		lbl.add_theme_constant_override("outline_size", 6)
+		lbl.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.8))
+		lbl.add_theme_constant_override("shadow_offset_x", 1)
+		lbl.add_theme_constant_override("shadow_offset_y", 1)
+		lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.5))
 	# Hook into SaveManager
 	SaveManager.gold_changed.connect(_on_gold_changed)
 	SaveManager.timber_changed.connect(_on_timber_changed)
