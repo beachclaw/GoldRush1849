@@ -52,6 +52,7 @@ func _on_tool_unlocked(tool_id: String) -> void:
 	else:
 		var tname: String = str(ToolSystem.TOOLS.get(tool_id, {}).get("name", tool_id))
 		show_notify("✅ %s purchased!" % tname)
+		_refresh_hotbar()
 
 func set_tool(tool_id: String) -> void:
 	tool_label.text = ToolSystem.get_display(tool_id)
@@ -137,17 +138,21 @@ func _build_hotbar() -> void:
 		_hotbar_slots.append(slot)
 
 func _refresh_hotbar() -> void:
+	var visible_index: int = 0
 	for i in range(HOTBAR_TOOLS.size()):
 		var tid: String = HOTBAR_TOOLS[i]
 		var slot: PanelContainer = _hotbar_slots[i]
 		var owned: bool = SaveManager.has_tool(tid) or tid == "pan"
 		var active: bool = tid == _active_tool
 
-		var style: StyleBoxFlat = slot.get_theme_stylebox("panel").duplicate()
+		# Only show owned tools
+		slot.visible = owned
 		if not owned:
-			style.bg_color = Color(0.08, 0.06, 0.04, 0.5)
-			style.border_color = Color(0.2, 0.15, 0.08, 0.3)
-		elif active:
+			continue
+
+		visible_index += 1
+		var style: StyleBoxFlat = slot.get_theme_stylebox("panel").duplicate()
+		if active:
 			style.bg_color = Color(0.22, 0.16, 0.08, 0.95)
 			style.border_color = Color(1.0, 0.85, 0.2, 0.9)
 		else:
@@ -156,10 +161,10 @@ func _refresh_hotbar() -> void:
 		slot.add_theme_stylebox_override("panel", style)
 
 		var vbox: VBoxContainer = slot.get_child(0)
+		var key_label: Label = vbox.get_child(0)
+		key_label.text = str(visible_index)
 		var name_label: Label = vbox.get_child(1)
-		if not owned:
-			name_label.add_theme_color_override("font_color", Color(0.4, 0.35, 0.28, 0.5))
-		elif active:
+		if active:
 			name_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 		else:
 			name_label.add_theme_color_override("font_color", Color(0.85, 0.78, 0.65))
@@ -174,9 +179,14 @@ func select_tool(tool_id: String) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		# Build list of owned tools to map key presses to visible slots
+		var owned_tools: Array[String] = []
+		for tid in HOTBAR_TOOLS:
+			if SaveManager.has_tool(tid) or tid == "pan":
+				owned_tools.append(tid)
 		for i in range(HOTBAR_KEYS.size()):
 			if event.keycode == HOTBAR_KEYS[i]:
-				var tid: String = HOTBAR_TOOLS[i]
-				select_tool(tid)
+				if i < owned_tools.size():
+					select_tool(owned_tools[i])
 				get_viewport().set_input_as_handled()
 				return

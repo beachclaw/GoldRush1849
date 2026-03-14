@@ -24,7 +24,10 @@ func _ready() -> void:
 		MOUSE_SENSITIVITY = cfg.get_value("controls", "mouse_sensitivity", 0.003)
 
 func _input(event: InputEvent) -> void:
+	# Don't recapture mouse when a UI screen is showing (store, pause, etc.)
 	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+			return  # A UI has the cursor — don't steal it
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		yaw   -= event.relative.x * MOUSE_SENSITIVITY

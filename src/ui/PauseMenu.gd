@@ -36,6 +36,11 @@ func _on_settings_pressed() -> void:
 	s.get_node("Panel/VBox/BackBtn").pressed.connect(s.queue_free)
 	add_child(s)
 
+func _on_restart_pressed() -> void:
+	SaveManager.reset()
+	get_tree().paused = false
+	get_tree().change_scene_to_file("res://scenes/main.tscn")
+
 func _on_quit_pressed() -> void:
 	SaveManager.save()
 	get_tree().paused = false

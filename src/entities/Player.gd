@@ -7,6 +7,7 @@ const GRAVITY = 9.8
 
 var current_tool: String  = "pan"
 var current_zone          = null   # MiningZone or null
+var _zone_stack: Array    = []     # overlapping mining zones
 var current_timber_zone   = null   # TimberZone or null
 var current_cabin_zone    = null   # CabinZone or null
 var is_mining: bool       = false
@@ -98,10 +99,10 @@ func _unhandled_input(event: InputEvent) -> void:
 # ─── Mining ───────────────────────────────────────────────────────────────────
 
 func _start_mining() -> void:
-	var tool_id := current_tool
-	# Check if player owns the tool
+	# Always use the zone's required tool, not whatever the player has selected
+	var tool_id: String = current_zone.get_tool_id() if current_zone else current_tool
+	# Check if player owns the required tool
 	if not SaveManager.has_tool(tool_id) and tool_id != "pan":
-		# Prompt them to buy it
 		mining_started.emit("locked")
 		return
 
@@ -125,11 +126,20 @@ func _start_mining() -> void:
 # ─── Zone entry / exit ────────────────────────────────────────────────────────
 
 func enter_mining_zone(zone) -> void:
+	if zone not in _zone_stack:
+		_zone_stack.append(zone)
 	current_zone = zone
 	current_tool = zone.get_tool_id()
 
 func exit_mining_zone() -> void:
-	current_zone = null
+	# Remove the exited zone and restore the previous one if overlapping
+	if current_zone in _zone_stack:
+		_zone_stack.erase(current_zone)
+	if _zone_stack.size() > 0:
+		current_zone = _zone_stack.back()
+		current_tool = current_zone.get_tool_id()
+	else:
+		current_zone = null
 
 # ─── Timber zone entry / exit ────────────────────────────────────────────────
 

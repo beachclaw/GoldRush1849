@@ -701,44 +701,95 @@ func _store_box(parent: Node3D, pos: Vector3, size: Vector3, mat: StandardMateri
 # ─── Rock Face ────────────────────────────────────────────────────────────────
 
 func _spawn_rock_face() -> void:
-	var mat_rock_face := _mat(Color(0.50, 0.46, 0.40))
-	var mat_rock_dark := _mat(Color(0.36, 0.32, 0.28))
+	# River boulder colors — warm grays/browns like Sierra Nevada granite
+	var mats := [
+		_mat(Color(0.52, 0.48, 0.42)),  # warm gray
+		_mat(Color(0.42, 0.38, 0.33)),  # dark brown-gray
+		_mat(Color(0.56, 0.52, 0.44)),  # light sandstone
+		_mat(Color(0.46, 0.42, 0.36)),  # medium gray-brown
+		_mat(Color(0.38, 0.35, 0.30)),  # dark granite
+	]
 
-	# Rock face cluster near river bank — new position (-14, ?, 8)
-	var positions := [
-		Vector3(-13, 1.2,  8.0),
-		Vector3(-15, 0.8,  9.2),
-		Vector3(-12, 0.6,  6.8),
-		Vector3(-16, 1.4,  7.5),
-		Vector3(-14, 2.0,  9.8),
-	]
-	var scales := [
-		Vector3(2.2, 2.4, 1.8),
-		Vector3(1.8, 1.6, 2.0),
-		Vector3(1.5, 1.2, 1.6),
-		Vector3(2.0, 2.8, 1.6),
-		Vector3(1.6, 3.0, 1.4),
-	]
-	for i in range(positions.size()):
+	# Helper: create one boulder with optional collision
+	var _boulder := func(pos: Vector3, r: float, sy: float, mat: StandardMaterial3D, collide: bool = false) -> void:
 		var rock := MeshInstance3D.new()
-		var mesh := BoxMesh.new()
-		mesh.size     = Vector3(1.0, 1.0, 1.0)
-		rock.mesh     = mesh
-		rock.position = positions[i]
-		rock.scale    = scales[i]
-		rock.rotation.y = rng.randf_range(-0.3, 0.3)
+		var mesh := SphereMesh.new()
+		mesh.radius = r
+		mesh.height = r * 2.0 * sy  # sy controls how tall vs wide
+		mesh.radial_segments = 12
+		mesh.rings = 8
+		rock.mesh = mesh
+		# Sink ~30% into ground so they look embedded
+		rock.position = Vector3(pos.x, r * sy * 0.7, pos.z)
+		# Slight random stretch on one axis for asymmetry
+		rock.scale = Vector3(
+			rng.randf_range(0.9, 1.15),
+			1.0,
+			rng.randf_range(0.9, 1.15)
+		)
+		rock.rotation.y = rng.randf_range(0.0, TAU)
+		rock.rotation.x = rng.randf_range(-0.08, 0.08)
+		rock.rotation.z = rng.randf_range(-0.06, 0.06)
 		add_child(rock)
-		_set_mat(rock, mat_rock_face if i % 2 == 0 else mat_rock_dark)
+		_set_mat(rock, mat)
 
-	# Ore vein hint — gold streak on main boulder
-	var vein := MeshInstance3D.new()
-	var vm   := BoxMesh.new()
-	vm.size       = Vector3(0.18, 2.2, 0.25)
-	vein.mesh     = vm
-	vein.position = Vector3(-14, 1.8, 9.5)
-	vein.rotation.z = 0.15
-	add_child(vein)
-	_set_mat(vein, _mat(Color(0.62, 0.55, 0.20)))
+		if collide:
+			var body := StaticBody3D.new()
+			body.position = rock.position
+			var col := CollisionShape3D.new()
+			var shape := SphereShape3D.new()
+			shape.radius = r * 0.85
+			col.shape = shape
+			body.add_child(col)
+			add_child(body)
+
+	# ── Big boulders — with collision so player can't walk through ──
+	_boulder.call(Vector3(-13.5, 0, 8.0),  1.1, 0.90, mats[0], true)   # center-front
+	_boulder.call(Vector3(-15.0, 0, 9.0),  1.0, 0.85, mats[1], true)   # back-left
+	_boulder.call(Vector3(-14.2, 0, 9.8),  1.2, 0.95, mats[3], true)   # back-center (tallest)
+	_boulder.call(Vector3(-16.0, 0, 8.0),  0.9, 0.80, mats[4], true)   # far-left
+
+	# ── Medium rocks — with collision ──
+	_boulder.call(Vector3(-14.6, 0, 8.4),  0.7, 0.85, mats[2], true)
+	_boulder.call(Vector3(-12.6, 0, 7.5),  0.65, 0.90, mats[3], true)
+	_boulder.call(Vector3(-15.5, 0, 8.8),  0.6, 0.80, mats[0], true)
+	_boulder.call(Vector3(-13.2, 0, 9.2),  0.55, 0.85, mats[4], true)
+	# A couple sitting higher (on top of big ones) — no collision needed
+	_boulder.call(Vector3(-14.0, 1.2, 9.2), 0.5, 0.80, mats[1])
+	_boulder.call(Vector3(-15.2, 0.8, 8.5), 0.45, 0.85, mats[2])
+
+	# ── Small rocks around the base ──
+	var small_positions := [
+		Vector3(-12.3, 0, 8.2), Vector3(-13.8, 0, 7.2),
+		Vector3(-15.8, 0, 7.4), Vector3(-16.2, 0, 9.2),
+		Vector3(-12.8, 0, 10.0), Vector3(-14.5, 0, 10.5),
+		Vector3(-11.8, 0, 7.0), Vector3(-13.0, 0, 6.8),
+	]
+	for pos in small_positions:
+		_boulder.call(pos, rng.randf_range(0.25, 0.45), rng.randf_range(0.75, 0.95), mats[rng.randi() % mats.size()])
+
+	# ── Pebbles scattered loosely ──
+	for _j in range(10):
+		var angle := rng.randf_range(0, TAU)
+		var dist  := rng.randf_range(1.5, 4.5)
+		var cx    := -14.0 + cos(angle) * dist
+		var cz    := 8.5 + sin(angle) * dist
+		_boulder.call(Vector3(cx, 0, cz), rng.randf_range(0.1, 0.2), rng.randf_range(0.7, 1.0), mats[rng.randi() % mats.size()])
+
+	# Ore vein hint — thin gold streaks on the back-center boulder surface
+	for vi in range(3):
+		var vein := MeshInstance3D.new()
+		var vm   := BoxMesh.new()
+		vm.size = Vector3(0.03, rng.randf_range(0.2, 0.4), 0.02)
+		vein.mesh = vm
+		vein.position = Vector3(
+			-14.2 + rng.randf_range(-0.3, 0.3),
+			1.2 + vi * 0.25,
+			9.8 + 1.2 * 0.95  # flush with boulder surface
+		)
+		vein.rotation.z = rng.randf_range(-0.3, 0.3)
+		add_child(vein)
+		_set_mat(vein, _mat(Color(0.65, 0.58, 0.22)))
 
 # ─── Loose Earth ──────────────────────────────────────────────────────────────
 

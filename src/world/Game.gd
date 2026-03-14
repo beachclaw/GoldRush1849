@@ -102,6 +102,13 @@ func _process(delta: float) -> void:
 		Audio.update_footsteps(false, delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Open store on E key when near
+	if event is InputEventKey and event.pressed and event.keycode == KEY_E:
+		if _near_store and not store_ui.visible and not pause_menu.visible and not inventory.visible:
+			store_ui.open()
+			get_viewport().set_input_as_handled()
+			return
+
 	# Pause — only when store/inventory/demo not open
 	if event.is_action_pressed("ui_cancel"):
 		if store_ui.visible or inventory.visible or demo_end.visible:
@@ -125,22 +132,40 @@ func _on_zone_entered(zone) -> void:
 	_current_zone = zone.zone_name.to_lower().replace(" ", "_")
 	if SaveManager.has_tool(tool_id) or tool_id == "pan":
 		hud.set_prompt("SPACE — %s" % zone.zone_name)
+		hud.set_tool(tool_id)
+		hud.select_tool(tool_id)
+		player.equip_tool(tool_id)
 	else:
 		var cost: float   = ToolSystem.get_unlock_cost(tool_id)
 		var tname: String = str(ToolSystem.TOOLS.get(tool_id, {}).get("name", tool_id))
 		hud.set_prompt("Need %s — buy at store (%dg)" % [tname, int(cost)])
 
 func _on_zone_exited(_zone) -> void:
-	_current_zone = ""
-	hud.set_prompt("")
+	# If player is still in another zone (overlapping), show that zone's prompt
+	if player.current_zone != null:
+		var fallback = player.current_zone
+		_current_zone = fallback.zone_name.to_lower().replace(" ", "_")
+		var tool_id: String = fallback.get_tool_id()
+		if SaveManager.has_tool(tool_id) or tool_id == "pan":
+			hud.set_prompt("SPACE — %s" % fallback.zone_name)
+			hud.set_tool(tool_id)
+			hud.select_tool(tool_id)
+			player.equip_tool(tool_id)
+		else:
+			var cost: float   = ToolSystem.get_unlock_cost(tool_id)
+			var tname: String = str(ToolSystem.TOOLS.get(tool_id, {}).get("name", tool_id))
+			hud.set_prompt("Need %s — buy at store (%dg)" % [tname, int(cost)])
+	else:
+		_current_zone = ""
+		hud.set_prompt("")
 
 func _on_store_entered() -> void:
 	_near_store = true
-	if not store_ui.visible and not pause_menu.visible and not inventory.visible:
-		store_ui.open()
+	hud.set_prompt("E — General Store")
 
 func _on_store_exited() -> void:
 	_near_store = false
+	hud.set_prompt("")
 
 func _on_store_closed() -> void:
 	hud._refresh_hotbar()

@@ -127,12 +127,41 @@ func _build_ui() -> void:
 	footer.add_theme_stylebox_override("panel", footer_style)
 	vbox.add_child(footer)
 
-	var footer_label := Label.new()
-	footer_label.text = "Press ESC to leave the store"
-	footer_label.add_theme_font_size_override("font_size", 14)
-	footer_label.add_theme_color_override("font_color", COL_DIM)
-	footer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer.add_child(footer_label)
+	var leave_btn := Button.new()
+	leave_btn.text = "Leave Store"
+	leave_btn.custom_minimum_size = Vector2(160, 42)
+	leave_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+	var lb_style := StyleBoxFlat.new()
+	lb_style.bg_color = COL_BTN
+	lb_style.corner_radius_top_left = 4
+	lb_style.corner_radius_top_right = 4
+	lb_style.corner_radius_bottom_left = 4
+	lb_style.corner_radius_bottom_right = 4
+	lb_style.border_width_top = 1
+	lb_style.border_width_bottom = 1
+	lb_style.border_width_left = 1
+	lb_style.border_width_right = 1
+	lb_style.border_color = COL_ACCENT
+	leave_btn.add_theme_stylebox_override("normal", lb_style)
+
+	var lb_hover := StyleBoxFlat.new()
+	lb_hover.bg_color = COL_BTN_HOVER
+	lb_hover.corner_radius_top_left = 4
+	lb_hover.corner_radius_top_right = 4
+	lb_hover.corner_radius_bottom_left = 4
+	lb_hover.corner_radius_bottom_right = 4
+	lb_hover.border_width_top = 1
+	lb_hover.border_width_bottom = 1
+	lb_hover.border_width_left = 1
+	lb_hover.border_width_right = 1
+	lb_hover.border_color = COL_GOLD
+	leave_btn.add_theme_stylebox_override("hover", lb_hover)
+
+	leave_btn.add_theme_font_size_override("font_size", 16)
+	leave_btn.add_theme_color_override("font_color", COL_CREAM)
+	leave_btn.pressed.connect(close)
+	footer.add_child(leave_btn)
 
 func _build_item_row(item: Dictionary, bg_color: Color) -> PanelContainer:
 	var container := PanelContainer.new()
@@ -244,20 +273,25 @@ func _refresh() -> void:
 		var row: PanelContainer = entry.row
 		var hbox: HBoxContainer = row.get_child(0)
 		var btn: Button = hbox.get_child(hbox.get_child_count() - 1)
+		var cost_label: Label = hbox.get_child(hbox.get_child_count() - 2)
 		var iid: String = str(item.get("id", ""))
 		var owned: bool = SaveManager.has_tool(iid) or (iid == "better_pan" and SaveManager.has_tool("pan_upgraded")) or (iid == "cabin_kit" and (SaveManager.has_cabin_kit() or SaveManager.has_cabin()))
 		if owned:
 			btn.text     = "Owned"
 			btn.disabled = true
+			cost_label.add_theme_color_override("font_color", COL_DIM)
 		elif SaveManager.get_gold() < item.cost:
 			btn.disabled = true
 			btn.text     = "Buy"
+			cost_label.add_theme_color_override("font_color", Color(0.7, 0.3, 0.2))
 		elif int(item.get("timber_cost", 0)) > 0 and SaveManager.get_timber() < int(item.get("timber_cost", 0)):
 			btn.disabled = true
 			btn.text     = "Buy"
+			cost_label.add_theme_color_override("font_color", Color(0.7, 0.3, 0.2))
 		else:
 			btn.disabled = false
 			btn.text     = "Buy"
+			cost_label.add_theme_color_override("font_color", COL_GOLD)
 
 func _on_buy(item: Dictionary, btn: Button, _cost_label: Label) -> void:
 	Audio.play("ui_click")
@@ -275,6 +309,13 @@ func _on_buy(item: Dictionary, btn: Button, _cost_label: Label) -> void:
 		SaveManager.unlock_tool("pan_upgraded")
 	else:
 		SaveManager.unlock_tool(iid)
+	# Brief "Purchased!" feedback
+	btn.text = "Purchased!"
+	btn.disabled = true
+	btn.add_theme_color_override("font_disabled_color", COL_GOLD)
+	await get_tree().create_timer(1.5).timeout
+	btn.remove_theme_color_override("font_disabled_color")
+	btn.add_theme_color_override("font_disabled_color", COL_DIM)
 	_refresh()
 
 func _unhandled_input(event: InputEvent) -> void:
