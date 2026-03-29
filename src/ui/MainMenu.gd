@@ -11,7 +11,7 @@ func _on_play_pressed() -> void:
 	var loading := LOADING_SCENE.instantiate()
 	get_tree().root.add_child(loading)
 	await get_tree().process_frame
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	get_tree().change_scene_to_file("res://scenes/rts_main.tscn")
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()

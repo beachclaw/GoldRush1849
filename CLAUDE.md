@@ -110,6 +110,25 @@ When you are spawned as a sub-agent to implement a feature:
 
 Do NOT merge your own PR. Just open it and notify.
 
+## Design Direction
+
+### Art Style
+Inspired by **Untitled Goose Game** — clean, rounded shapes with matte materials and a flat/illustrated shading style. Warm, muted earth-tone palette. The "simple" look comes from simple *materials* on carefully modeled shapes, not from using primitive geometry.
+
+- Characters should be proper 3D models (.glb from Blender), not assembled from primitive meshes
+- Materials: high roughness, low metallic, no shiny/plastic look
+- Colors: warm and muted — dusty browns, sage greens, cream whites, warm tans
+- Shading: aim for a toon/flat shader eventually
+
+### Character Design
+1849 California prospector look: wide-brim hat, cream work shirt, brown overalls with suspenders, dark boots. Warm tan skin. Properly proportioned but stylized — not a blob, not a stick figure.
+
+### Animation & Feel
+Every tool must have its own distinct animation. A pickaxe swing should feel different from panning gold or shoveling dirt. Animations should have weight and personality. The current single "lean forward and wave arms" animation is a known gap.
+
+### Game Juice
+Mining should feel satisfying — particles, screen shake on lucky strikes, sound feedback, visual progress. Each action should give clear feedback that something happened.
+
 ## Conventions
 
 - GDScript files live in `src/` organized by role: `systems/`, `world/`, `entities/`, `ui/`, `tests/`.

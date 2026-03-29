@@ -1,0 +1,146 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://src/world/RTSGame.gd" id="1"]
+[ext_resource type="Script" path="res://src/world/MiningZone.gd" id="3"]
+[ext_resource type="Script" path="res://src/world/RTSCamera.gd" id="5"]
+[ext_resource type="Script" path="res://src/world/Scenery.gd" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="9"]
+[ext_resource type="Script" path="res://src/world/DayCycle.gd" id="12"]
+[ext_resource type="Script" path="res://src/ui/RTSHUD.gd" id="13"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_1"]
+size = Vector2(80, 80)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Ground"]
+albedo_color = Color(0.35, 0.52, 0.22, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_Ground"]
+size = Vector3(80, 0.5, 80)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_River"]
+size = Vector2(8, 60)
+subdivide_width = 12
+subdivide_depth = 40
+
+[sub_resource type="Shader" id="Shader_Water"]
+code = "shader_type spatial;
+render_mode depth_draw_opaque,cull_back,diffuse_burley,specular_schlick_ggx;
+uniform vec4 water_color:source_color=vec4(0.12,0.38,0.70,1.0);
+uniform float wave_speed:hint_range(0.0,5.0)=0.6;
+uniform float wave_scale:hint_range(0.1,10.0)=2.2;
+uniform float wave_height:hint_range(0.0,1.0)=0.14;
+void vertex(){
+  float wx=abs(sin(VERTEX.x*wave_scale+TIME*wave_speed*2.8))*wave_height;
+  float wz=abs(sin(VERTEX.z*wave_scale*1.3+TIME*wave_speed*2.1))*wave_height*0.6;
+  VERTEX.y+=wx+wz;
+}
+void fragment(){
+  float shimmer=sin(UV.x*12.0+TIME*wave_speed*3.0)*0.5+0.5;
+  float flow=fract(UV.y*6.0-TIME*wave_speed*0.25);
+  float highlight=smoothstep(0.38,0.52,flow)*0.08;
+  vec3 deep=water_color.rgb;
+  vec3 col=deep+vec3(shimmer*0.06,shimmer*0.09,shimmer*0.04)+vec3(highlight*0.6,highlight*0.7,highlight);
+  ALBEDO=col;
+  SPECULAR=0.9;
+  ROUGHNESS=0.06;
+}"
+
+[sub_resource type="ShaderMaterial" id="Mat_Water"]
+shader = SubResource("Shader_Water")
+
+[node name="RTSGame" type="Node3D"]
+script = ExtResource("1")
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="Ground" type="MeshInstance3D" parent="World"]
+mesh = SubResource("PlaneMesh_1")
+surface_material_override/0 = SubResource("Mat_Ground")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="World/Ground"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Ground/StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+shape = SubResource("BoxShape_Ground")
+
+[node name="River" type="Node3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.18, 0)
+
+[node name="RiverMesh" type="MeshInstance3D" parent="World/River"]
+mesh = SubResource("PlaneMesh_River")
+surface_material_override/0 = SubResource("Mat_Water")
+
+[node name="PanZone" type="Area3D" parent="World/River"]
+script = ExtResource("3")
+zone_name = "American River"
+quality = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/River/PanZone"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="RichZone" type="Area3D" parent="World/River"]
+transform = Transform3D(1,0,0, 0,1,0, 0,0,1, 0,0,-12)
+script = ExtResource("3")
+zone_name = "Rich Bend"
+quality = 1.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/River/RichZone"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="ShallowZone" type="Area3D" parent="World/River"]
+transform = Transform3D(1,0,0, 0,1,0, 0,0,1, 0,0,15)
+script = ExtResource("3")
+zone_name = "Shallow Ford"
+quality = 0.7
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/River/ShallowZone"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="RockZone" type="Area3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 1.0, 8)
+script = ExtResource("3")
+zone_name = "Rock Face"
+tool_type = 1
+quality = 1.2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/RockZone"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="EarthZone" type="Area3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0.5, 6)
+script = ExtResource("3")
+zone_name = "Loose Earth"
+tool_type = 2
+quality = 0.8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/EarthZone"]
+shape = SubResource("BoxShape_Ground")
+
+[node name="Scenery" type="Node3D" parent="World"]
+script = ExtResource("6")
+
+[node name="Sun" type="DirectionalLight3D" parent="World"]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 10, 0)
+light_color = Color(1.0, 0.95, 0.8, 1)
+light_energy = 1.4
+shadow_enabled = true
+directional_shadow_mode = 2
+directional_shadow_blend_splits = true
+groups = ["sun"]
+
+[node name="RTSCamera" type="Node3D" parent="."]
+script = ExtResource("5")
+
+[node name="Camera3D" type="Camera3D" parent="RTSCamera"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+fov = 55.0
+
+[node name="Workers" type="Node3D" parent="."]
+
+[node name="RTSHUD" type="CanvasLayer" parent="."]
+script = ExtResource("13")
+
+[node name="PauseMenu" parent="." instance=ExtResource("9")]
+
+[node name="DayCycle" type="Node" parent="."]
+script = ExtResource("12")

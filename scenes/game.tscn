@@ -76,41 +76,80 @@ size = Vector3(1.0, 10.0, 82.0)
 size = Vector3(82.0, 10.0, 1.0)
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape_Player"]
-radius = 0.4
-height = 1.8
+radius = 0.38
+height = 1.7
 
 [sub_resource type="SphereMesh" id="Mesh_Head"]
-radius = 0.2
-height = 0.4
+radius = 0.22
+height = 0.40
+radial_segments = 16
+rings = 12
 
 [sub_resource type="StandardMaterial3D" id="Mat_Skin"]
-albedo_color = Color(0.9, 0.75, 0.6, 1)
+albedo_color = Color(0.76, 0.58, 0.42, 1)
+roughness = 0.88
 
-[sub_resource type="BoxMesh" id="Mesh_HatBrim"]
-size = Vector3(0.48, 0.05, 0.48)
+[sub_resource type="CylinderMesh" id="Mesh_HatBrim"]
+top_radius = 0.30
+bottom_radius = 0.28
+height = 0.035
+radial_segments = 16
 
-[sub_resource type="BoxMesh" id="Mesh_HatCrown"]
-size = Vector3(0.3, 0.22, 0.3)
+[sub_resource type="CylinderMesh" id="Mesh_HatCrown"]
+top_radius = 0.12
+bottom_radius = 0.18
+height = 0.18
+radial_segments = 12
 
 [sub_resource type="StandardMaterial3D" id="Mat_Hat"]
-albedo_color = Color(0.32, 0.22, 0.12, 1)
+albedo_color = Color(0.40, 0.28, 0.15, 1)
+roughness = 0.82
 
-[sub_resource type="BoxMesh" id="Mesh_Torso"]
-size = Vector3(0.52, 0.52, 0.28)
+[sub_resource type="CapsuleMesh" id="Mesh_Torso"]
+radius = 0.28
+height = 0.62
+radial_segments = 16
 
 [sub_resource type="StandardMaterial3D" id="Mat_Shirt"]
-albedo_color = Color(0.42, 0.55, 0.38, 1)
+albedo_color = Color(0.78, 0.72, 0.62, 1)
+roughness = 0.85
+
+[sub_resource type="CapsuleMesh" id="Mesh_Overalls"]
+radius = 0.29
+height = 0.44
+radial_segments = 16
+
+[sub_resource type="StandardMaterial3D" id="Mat_Overalls"]
+albedo_color = Color(0.42, 0.36, 0.26, 1)
+roughness = 0.85
 
 [sub_resource type="CapsuleMesh" id="Mesh_Arm"]
-radius = 0.08
-height = 0.48
+radius = 0.09
+height = 0.36
+
+[sub_resource type="SphereMesh" id="Mesh_Hand"]
+radius = 0.07
+height = 0.10
+radial_segments = 10
 
 [sub_resource type="CapsuleMesh" id="Mesh_Leg"]
-radius = 0.1
-height = 0.52
+radius = 0.11
+height = 0.40
+
+[sub_resource type="CapsuleMesh" id="Mesh_Boot"]
+radius = 0.12
+height = 0.18
 
 [sub_resource type="StandardMaterial3D" id="Mat_Pants"]
-albedo_color = Color(0.28, 0.35, 0.52, 1)
+albedo_color = Color(0.42, 0.36, 0.26, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_Boot"]
+albedo_color = Color(0.28, 0.20, 0.12, 1)
+roughness = 0.78
+
+[sub_resource type="BoxMesh" id="Mesh_Suspender"]
+size = Vector3(0.05, 0.50, 0.03)
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1")
@@ -223,17 +262,17 @@ script = ExtResource("2")
 [node name="Body" type="Node3D" parent="Player"]
 
 [node name="Head" type="MeshInstance3D" parent="Player/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.62, 0)
 mesh = SubResource("Mesh_Head")
 surface_material_override/0 = SubResource("Mat_Skin")
 
 [node name="HatBrim" type="MeshInstance3D" parent="Player/Body/Head"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.20, 0.02)
 mesh = SubResource("Mesh_HatBrim")
 surface_material_override/0 = SubResource("Mat_Hat")
 
 [node name="HatCrown" type="MeshInstance3D" parent="Player/Body/Head"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.30, 0)
 mesh = SubResource("Mesh_HatCrown")
 surface_material_override/0 = SubResource("Mat_Hat")
 
@@ -242,25 +281,60 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
 mesh = SubResource("Mesh_Torso")
 surface_material_override/0 = SubResource("Mat_Shirt")
 
+[node name="Overalls" type="MeshInstance3D" parent="Player/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("Mesh_Overalls")
+surface_material_override/0 = SubResource("Mat_Overalls")
+
+[node name="SuspenderL" type="MeshInstance3D" parent="Player/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.10, 0.18, 0.12)
+mesh = SubResource("Mesh_Suspender")
+surface_material_override/0 = SubResource("Mat_Overalls")
+
+[node name="SuspenderR" type="MeshInstance3D" parent="Player/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.10, 0.18, 0.12)
+mesh = SubResource("Mesh_Suspender")
+surface_material_override/0 = SubResource("Mat_Overalls")
+
 [node name="LeftArm" type="MeshInstance3D" parent="Player/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33, 0.18, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0.20, 0)
 mesh = SubResource("Mesh_Arm")
+surface_material_override/0 = SubResource("Mat_Shirt")
+
+[node name="LeftHand" type="MeshInstance3D" parent="Player/Body/LeftArm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.20, 0)
+mesh = SubResource("Mesh_Hand")
 surface_material_override/0 = SubResource("Mat_Skin")
 
 [node name="RightArm" type="MeshInstance3D" parent="Player/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.33, 0.18, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 0.20, 0)
 mesh = SubResource("Mesh_Arm")
+surface_material_override/0 = SubResource("Mat_Shirt")
+
+[node name="RightHand" type="MeshInstance3D" parent="Player/Body/RightArm"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.20, 0)
+mesh = SubResource("Mesh_Hand")
 surface_material_override/0 = SubResource("Mat_Skin")
 
 [node name="LeftLeg" type="MeshInstance3D" parent="Player/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, -0.52, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, -0.42, 0)
 mesh = SubResource("Mesh_Leg")
 surface_material_override/0 = SubResource("Mat_Pants")
 
+[node name="LeftBoot" type="MeshInstance3D" parent="Player/Body/LeftLeg"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.24, 0.02)
+mesh = SubResource("Mesh_Boot")
+surface_material_override/0 = SubResource("Mat_Boot")
+
 [node name="RightLeg" type="MeshInstance3D" parent="Player/Body"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, -0.52, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, -0.42, 0)
 mesh = SubResource("Mesh_Leg")
 surface_material_override/0 = SubResource("Mat_Pants")
+
+[node name="RightBoot" type="MeshInstance3D" parent="Player/Body/RightLeg"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.24, 0.02)
+mesh = SubResource("Mesh_Boot")
+surface_material_override/0 = SubResource("Mat_Boot")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("CapsuleShape_Player")

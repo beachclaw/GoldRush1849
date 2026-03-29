@@ -23,6 +23,7 @@ ToolSystem="*res://src/systems/ToolSystem.gd"
 SaveManager="*res://src/systems/SaveManager.gd"
 Tutorial="*res://src/systems/TutorialManager.gd"
 Audio="*res://src/systems/AudioManager.gd"
+SelectionManager="*res://src/systems/SelectionManager.gd"
 
 [display]
 

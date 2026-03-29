@@ -28,6 +28,7 @@ func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player"):
 		body.enter_mining_zone(self)
 		player_entered.emit(self)
+	# Workers handle their own zone logic via commands, no signal needed
 
 func _on_body_exited(body: Node3D) -> void:
 	if body.is_in_group("player"):

@@ -16,7 +16,8 @@ func open() -> void:
 func close() -> void:
 	visible = false
 	get_tree().paused = false
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Keep mouse visible for RTS mode; third-person mode recaptures via CameraController
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	resumed.emit()
 
 func _on_resume_pressed() -> void:
@@ -39,7 +40,7 @@ func _on_settings_pressed() -> void:
 func _on_restart_pressed() -> void:
 	SaveManager.reset()
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	get_tree().change_scene_to_file("res://scenes/rts_main.tscn")
 
 func _on_quit_pressed() -> void:
 	SaveManager.save()

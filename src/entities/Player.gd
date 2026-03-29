@@ -15,8 +15,9 @@ var is_chopping: bool     = false
 var chop_count: int       = 0      # hits so far (3 = 1 timber)
 var camera_pivot: Node3D  = null
 
-var walk_cycle: float = 0.0
-var pan_blend: float  = 0.0
+var walk_cycle: float  = 0.0
+var action_blend: float = 0.0
+var action_cycle: float = 0.0
 
 signal mining_started(tool_id: String)
 signal mining_finished(tool_id: String, amount: float, lucky: bool)
@@ -36,11 +37,16 @@ var _active_tool: Node3D # currently equipped tool mesh
 
 func _ready() -> void:
 	add_to_group("player")
-	# Create mount point on right arm
+	# Create mount point on right hand
 	_tool_mount = Node3D.new()
 	_tool_mount.name = "ToolMount"
-	_tool_mount.position = Vector3(0.18, -0.05, 0.28)
-	$Body/RightArm.add_child(_tool_mount)
+	var hand = $Body/RightArm/RightHand
+	if hand:
+		_tool_mount.position = Vector3(0.0, -0.04, 0.16)
+		hand.add_child(_tool_mount)
+	else:
+		_tool_mount.position = Vector3(0.18, -0.05, 0.28)
+		$Body/RightArm.add_child(_tool_mount)
 	equip_tool("pan")
 	# Sync gold from save
 	SaveManager.gold_changed.connect(_on_gold_changed)
@@ -185,17 +191,27 @@ func _start_chopping() -> void:
 
 func _animate_body(delta: float) -> void:
 	var speed_xz := Vector2(velocity.x, velocity.z).length()
-	pan_blend = lerp(pan_blend, 1.0 if (is_mining or is_chopping) else 0.0, delta * 6.0)
+	var working := is_mining or is_chopping
+	action_blend = lerp(action_blend, 1.0 if working else 0.0, delta * 6.0)
 
-	if pan_blend > 0.01:
-		body.rotation.x      = lerp(body.rotation.x,      pan_blend * 0.45,  delta * 8.0)
-		left_arm.rotation.x  = lerp(left_arm.rotation.x,  pan_blend * 1.1,   delta * 8.0)
-		right_arm.rotation.x = lerp(right_arm.rotation.x, pan_blend * 1.1,   delta * 8.0)
-		left_leg.rotation.x  = lerp(left_leg.rotation.x,  pan_blend * -0.2,  delta * 8.0)
-		right_leg.rotation.x = lerp(right_leg.rotation.x, pan_blend * -0.2,  delta * 8.0)
-		body.position.y      = lerp(body.position.y,      pan_blend * -0.15, delta * 8.0)
+	if action_blend > 0.01:
+		action_cycle += delta
+		if is_chopping:
+			_animate_axe_chop(delta)
+		else:
+			match current_tool:
+				"pan", "pan_upgraded":
+					_animate_pan(delta)
+				"pickaxe":
+					_animate_pickaxe(delta)
+				"shovel":
+					_animate_shovel(delta)
+				_:
+					_animate_pan(delta)
 		walk_cycle = 0.0
 		return
+
+	action_cycle = 0.0
 
 	if speed_xz > 0.5:
 		walk_cycle += delta * 9.0
@@ -212,7 +228,148 @@ func _animate_body(delta: float) -> void:
 		left_leg.rotation.x  = lerp(left_leg.rotation.x,  0.0, delta * 10.0)
 		right_leg.rotation.x = lerp(right_leg.rotation.x, 0.0, delta * 10.0)
 		body.rotation.x      = lerp(body.rotation.x,      0.0, delta * 10.0)
+		body.rotation.z      = lerp(body.rotation.z,      0.0, delta * 10.0)
 		body.position.y      = lerp(body.position.y,      0.0, delta * 10.0)
+
+# ─── Pan: crouch down, swirl arms side to side ──────────────────────────────
+
+func _animate_pan(delta: float) -> void:
+	var b := action_blend
+	var swirl := sin(action_cycle * 5.0) * 0.4
+	# Crouch low, lean forward
+	body.rotation.x      = lerp(body.rotation.x,      b * 0.55, delta * 8.0)
+	body.position.y      = lerp(body.position.y,      b * -0.20, delta * 8.0)
+	# Arms reach forward and swirl together (holding pan)
+	left_arm.rotation.x  = lerp(left_arm.rotation.x,  b * 1.2 + swirl * 0.2, delta * 8.0)
+	right_arm.rotation.x = lerp(right_arm.rotation.x, b * 1.2 + swirl * 0.2, delta * 8.0)
+	# Subtle body sway with the swirl
+	body.rotation.z      = lerp(body.rotation.z,      swirl * b * 0.12, delta * 8.0)
+	# Legs braced
+	left_leg.rotation.x  = lerp(left_leg.rotation.x,  b * -0.3, delta * 8.0)
+	right_leg.rotation.x = lerp(right_leg.rotation.x, b * -0.2, delta * 8.0)
+
+# ─── Pickaxe: overhead swing down with follow-through ───────────────────────
+
+func _animate_pickaxe(delta: float) -> void:
+	var b := action_blend
+	# Repeating swing cycle: wind up (0-0.4), slam down (0.4-0.6), hold (0.6-1.0)
+	var t := fmod(action_cycle * 2.5, 1.0)
+	var right_rot: float
+	var left_rot: float
+	var body_lean: float
+	var body_dip: float
+
+	if t < 0.4:
+		# Wind up — arms go back over head
+		var wind := t / 0.4
+		right_rot = b * (-1.8 * wind)        # arms swing back
+		left_rot  = b * (-1.5 * wind)
+		body_lean = b * (-0.15 * wind)        # lean back slightly
+		body_dip  = 0.0
+	elif t < 0.6:
+		# Slam down — fast forward swing
+		var slam := (t - 0.4) / 0.2
+		right_rot = b * (-1.8 + 3.0 * slam)  # swing through to forward
+		left_rot  = b * (-1.5 + 2.6 * slam)
+		body_lean = b * (-0.15 + 0.55 * slam) # lurch forward
+		body_dip  = b * -0.08 * slam          # body drops with impact
+	else:
+		# Recovery — ease back to ready
+		var ease := (t - 0.6) / 0.4
+		right_rot = b * (1.2 - 1.2 * ease)
+		left_rot  = b * (1.1 - 1.1 * ease)
+		body_lean = b * (0.4 - 0.4 * ease)
+		body_dip  = b * -0.08 * (1.0 - ease)
+
+	right_arm.rotation.x = lerp(right_arm.rotation.x, right_rot, delta * 12.0)
+	left_arm.rotation.x  = lerp(left_arm.rotation.x,  left_rot,  delta * 12.0)
+	body.rotation.x      = lerp(body.rotation.x,      body_lean, delta * 10.0)
+	body.position.y      = lerp(body.position.y,      body_dip,  delta * 10.0)
+	# Legs spread for stability
+	left_leg.rotation.x  = lerp(left_leg.rotation.x,  b * -0.15, delta * 8.0)
+	right_leg.rotation.x = lerp(right_leg.rotation.x, b * 0.1,   delta * 8.0)
+
+# ─── Shovel: dig and lift motion ────────────────────────────────────────────
+
+func _animate_shovel(delta: float) -> void:
+	var b := action_blend
+	# Cycle: push down (0-0.35), scoop up (0.35-0.65), toss (0.65-1.0)
+	var t := fmod(action_cycle * 2.0, 1.0)
+	var right_rot: float
+	var left_rot: float
+	var body_lean: float
+	var body_dip: float
+
+	if t < 0.35:
+		# Push shovel into ground — lean forward, arms down
+		var push := t / 0.35
+		right_rot = b * (0.8 + 0.5 * push)
+		left_rot  = b * (0.6 + 0.4 * push)
+		body_lean = b * (0.35 + 0.2 * push)
+		body_dip  = b * -0.12 * push
+	elif t < 0.65:
+		# Scoop up — lift arms, straighten body
+		var lift := (t - 0.35) / 0.3
+		right_rot = b * (1.3 - 1.8 * lift)
+		left_rot  = b * (1.0 - 1.4 * lift)
+		body_lean = b * (0.55 - 0.55 * lift)
+		body_dip  = b * (-0.12 + 0.12 * lift)
+	else:
+		# Toss to side — twist and dump
+		var toss := (t - 0.65) / 0.35
+		right_rot = b * (-0.5 + 0.5 * toss)
+		left_rot  = b * (-0.4 + 0.4 * toss)
+		body_lean = b * (0.1 * (1.0 - toss))
+		body_dip  = 0.0
+
+	right_arm.rotation.x = lerp(right_arm.rotation.x, right_rot, delta * 10.0)
+	left_arm.rotation.x  = lerp(left_arm.rotation.x,  left_rot,  delta * 10.0)
+	body.rotation.x      = lerp(body.rotation.x,      body_lean, delta * 10.0)
+	body.position.y      = lerp(body.position.y,      body_dip,  delta * 10.0)
+	# Foot on shovel — one leg pushes down
+	left_leg.rotation.x  = lerp(left_leg.rotation.x,  b * -0.25, delta * 8.0)
+	right_leg.rotation.x = lerp(right_leg.rotation.x, b * 0.15,  delta * 8.0)
+
+# ─── Axe chop: side swing ───────────────────────────────────────────────────
+
+func _animate_axe_chop(delta: float) -> void:
+	var b := action_blend
+	# Cycle: wind (0-0.3), chop (0.3-0.5), hold (0.5-1.0)
+	var t := fmod(action_cycle * 3.0, 1.0)
+	var right_rot: float
+	var left_rot: float
+	var body_twist: float
+	var body_lean: float
+
+	if t < 0.3:
+		# Wind up — arms back and to the right
+		var wind := t / 0.3
+		right_rot  = b * (-1.4 * wind)
+		left_rot   = b * (-0.8 * wind)
+		body_twist = b * (-0.25 * wind)
+		body_lean  = b * (-0.1 * wind)
+	elif t < 0.5:
+		# Chop — fast swing across
+		var chop := (t - 0.3) / 0.2
+		right_rot  = b * (-1.4 + 2.4 * chop)
+		left_rot   = b * (-0.8 + 1.6 * chop)
+		body_twist = b * (-0.25 + 0.45 * chop)
+		body_lean  = b * (-0.1 + 0.4 * chop)
+	else:
+		# Recovery
+		var ease := (t - 0.5) / 0.5
+		right_rot  = b * (1.0 - 1.0 * ease)
+		left_rot   = b * (0.8 - 0.8 * ease)
+		body_twist = b * (0.2 - 0.2 * ease)
+		body_lean  = b * (0.3 - 0.3 * ease)
+
+	right_arm.rotation.x = lerp(right_arm.rotation.x, right_rot,  delta * 14.0)
+	left_arm.rotation.x  = lerp(left_arm.rotation.x,  left_rot,   delta * 14.0)
+	body.rotation.z      = lerp(body.rotation.z,       body_twist, delta * 12.0)
+	body.rotation.x      = lerp(body.rotation.x,       body_lean,  delta * 10.0)
+	left_leg.rotation.x  = lerp(left_leg.rotation.x,   b * 0.15,  delta * 8.0)
+	right_leg.rotation.x = lerp(right_leg.rotation.x,  b * -0.1,  delta * 8.0)
+	body.position.y      = lerp(body.position.y,       0.0,       delta * 8.0)
 
 func _save_screenshot() -> void:
 	var img := get_viewport().get_texture().get_image()
